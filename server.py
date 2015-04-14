@@ -4,9 +4,19 @@ import tornado.websocket
 from botchallenge import *
 import os
 import sys
+from buildhut import build_house
 
 robot = None
 robot_ready = False
+
+class Actions:
+    Build, Find, Get, Stop, Come, Hello, What = range(7)
+
+class Objects:
+    House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron, Diamond = range(10)
+
+action = False
+obj = False
 
 if len(sys.argv) == 2:
     MINECRAFT_USERNAME = str(sys.argv[1])
@@ -25,6 +35,10 @@ else:
     print("No Minecraft username given - skipping connection to server")
 
 
+def message_has_substring(message, substring_list):
+    return any(substr in message for substr in substring_list)
+
+
 class Hello(tornado.websocket.WebSocketHandler):
     def open(self):
         self.write_message("Hello web page")
@@ -34,10 +48,50 @@ class Hello(tornado.websocket.WebSocketHandler):
         print("Received message: '"+message+"'")
         if robot_ready:
             robot.message_all(message)
-            if "down" in message:
-                robot.move(Dir.DOWN)
-            if "up" in message:
-                robot.move(Dir.UP)
+            # Detecting Action
+            if message_has_substring(message, ["build","built"]):
+                action = Actions.Build
+            elif message_has_substring(message, ["find","search","look for"]):
+                action = Actions.Find
+            elif message_has_substring(message, ["get","gather","collect","cut","mine","pick","obtain"]):
+                action = Actions.Get
+            elif message_has_substring(message, ["stop","quit"]):
+                action = Actions.Stop
+            elif message_has_substring(message, ["come"]):
+                action = Actions.Come
+            elif message_has_substring(message, ["hello","hi","hey","howdy"]):
+                action = Actions.Hello
+            elif message_has_substring(message, ["what"]):
+                action = Actions.What
+            else:
+                action = False
+
+            # Detecting object
+            if message_has_substring(message, ["house","hut","shelter","place to sleep","fort","home","building","structure"]):
+                obj = Objects.House
+            elif message_has_substring(message, ["tunnel","cave"]):
+                obj = Objects.Tunnel
+            elif message_has_substring(message, ["tree","wood","log"]):
+                obj = Objects.Tree
+            elif message_has_substring(message, ["coal","goal"]):
+                obj = Objects.Coal
+            elif message_has_substring(message, ["dirt","ground","grass","earth"]):
+                obj = Objects.Dirt
+            elif message_has_substring(message, ["sand"]):
+                obj = Objects.Sand
+            elif message_has_substring(message, ["water"]):
+                obj = Objects.Water
+            elif message_has_substring(message, ["stone","rock","mountain","gray","grey"]):
+                obj = Objects.Stone
+            elif message_has_substring(message, ["iron"]):
+                obj = Objects.Iron
+            elif message_has_substring(message, ["diamond"]):
+                obj = Objects.Diamond
+            else:
+                obj = False
+
+            if action == Actions.Build and obj == Objects.House:
+                build_house(robot)
 
     def on_close(self):
         print("CLOSING SERVER")
