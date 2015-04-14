@@ -38,7 +38,30 @@ class Hello(tornado.websocket.WebSocketHandler):
                 robot.move(Dir.DOWN)
             if "up" in message:
                 robot.move(Dir.UP)
-
+            if "left" in message:
+                robot.move(Dir.LEFT)
+            if "right" in message:
+                robot.move(Dir.RIGHT)
+            if "forward" in message:
+                robot.move(Dir.FORWARD)
+            if "backward" in message or "back" in message:
+                robot.move(Dir.BACKWARD)
+            if "come" in message:
+                ownerLoc = robot.get_owner_location()
+                robot.message_owner("I'm coming from " + str(int(robot.get_location().distance(ownerLoc))) + " units away.")
+                while robot.get_location().distance(ownerLoc) > 4:
+                    direction = robot.find_path(ownerLoc)
+                    robot.turn(direction)
+                    robot.move(direction)
+                robot.message_owner("I'm here!")
+            if "stop" in message:
+                pass
+                #TODO
+            if "hello" in message:
+                robot.message_all("Hello, I'm Jack!  Let's play Minecraft together!")
+            if "what" in message:
+                robot.message_all("I do the things you tell me to, such as build a house or find coal.")
+                
     def on_close(self):
         print("CLOSING SERVER")
 
