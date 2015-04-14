@@ -267,6 +267,8 @@ if (!('webkitSpeechRecognition' in window)) {
   };
 
   recognition.onend = function() {
+    console.log("on end event");
+    /*
     recognizing = false;
     if (ignore_onend) {
       return;
@@ -287,6 +289,11 @@ if (!('webkitSpeechRecognition' in window)) {
       create_email = false;
       createEmail();
     }
+    */
+    setTimeout(function() {
+      recognition.start();
+      console.log("recognizing speech again");
+    }, 500);
   };
 
   recognition.onresult = function(event) {

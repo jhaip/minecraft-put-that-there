@@ -73,21 +73,6 @@ class Hello(tornado.websocket.WebSocketHandler):
                 robot.move(Dir.FORWARD)
             if "backward" in message or "back" in message:
                 robot.move(Dir.BACKWARD)
-            if "come" in message:
-                ownerLoc = robot.get_owner_location()
-                robot.message_owner("I'm coming from " + str(int(robot.get_location().distance(ownerLoc))) + " units away.")
-                while robot.get_location().distance(ownerLoc) > 4:
-                    direction = robot.find_path(ownerLoc)
-                    robot.turn(direction)
-                    robot.move(direction)
-                robot.message_owner("I'm here!")
-            if "stop" in message:
-                pass
-                #TODO
-            if "hello" in message:
-                robot.message_all("Hello, I'm Jack!  Let's play Minecraft together!")
-            if "what" in message:
-                robot.message_all("I do the things you tell me to, such as build a house or find coal.")
                 
             # Detecting Action
             if message_has_substring(message, ["build","built"]):
@@ -134,7 +119,7 @@ class Hello(tornado.websocket.WebSocketHandler):
             # Making Jack do thing based on an action, obj combo
             if action == Actions.Build and obj == Objects.House:
                 build_house(robot)
-            if action == Actions.Build and obj == Objects.Tunel:
+            if action == Actions.Build and obj == Objects.Tunnel:
                 mine_tunnel(robot)
             if action == Actions.Find:
                 if obj in objToBlockTypes:
@@ -142,6 +127,22 @@ class Hello(tornado.websocket.WebSocketHandler):
             if action == Actions.Get:
                 if obj in objToBlockTypes:
                     gather_block(robot, objToBlockTypes[obj])
+            if action == Actions.Stop:
+                pass
+            if action == Actions.Come:
+                ownerLoc = robot.get_owner_location()
+                robot.message_owner("I'm coming from " + str(int(robot.get_location().distance(ownerLoc))) + " units away.")
+                while robot.get_location().distance(ownerLoc) > 4:
+                    direction = robot.find_path(ownerLoc)
+                    robot.turn(direction)
+                    robot.move(direction)
+                while robot.get_block_type(Dir.DOWN) == BlockType.AIR:
+                    robot.move(Dir.DOWN)
+                robot.message_owner("I'm here!")
+            if action == Actions.Hello:
+                robot.message_all("Hello, I'm Jack!  Let's play Minecraft together!")
+            if action == Actions.What:
+                robot.message_all("I do the things you tell me to, such as build a house or find coal.")
 
     def on_close(self):
         print("CLOSING SERVER")
