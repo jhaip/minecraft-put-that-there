@@ -15,23 +15,23 @@ def mine_tunnel(robot):
     print("*** STARTING MINE_TUNNEL SCRIPT")
     for i in range(10):
         # Clear space above and below
-        mine_if_solid(Dir.DOWN)
-        mine_if_solid(Dir.UP)
+        mine_if_solid(robot, Dir.DOWN)
+        mine_if_solid(robot, Dir.UP)
         
         # Mine and move right
-        mine_if_solid(Dir.RIGHT)
+        mine_if_solid(robot, Dir.RIGHT)
         robot.move(Dir.RIGHT)
 
         # Clear space above and below
-        mine_if_solid(Dir.DOWN)
-        mine_if_solid(Dir.UP)
+        mine_if_solid(robot, Dir.DOWN)
+        mine_if_solid(robot, Dir.UP)
         
         # Move left + down + forward
-        mine_if_solid(Dir.LEFT)
+        mine_if_solid(robot, Dir.LEFT)
         robot.move(Dir.LEFT)
-        mine_if_solid(Dir.DOWN)
+        mine_if_solid(robot, Dir.DOWN)
         robot.move(Dir.DOWN)
-        mine_if_solid(Dir.FORWARD)
+        mine_if_solid(robot, Dir.FORWARD)
         robot.move(Dir.FORWARD)
     robot.message_all("Tunnel complete!")
     print("done!")

@@ -75,11 +75,12 @@ class Hello(tornado.websocket.WebSocketHandler):
                 robot.move(Dir.BACKWARD)
                 
             # Detecting Action
-            if message_has_substring(message, ["build","built"]):
+            action = False
+            if message_has_substring(message, ["build","make"]):
                 action = Actions.Build
             elif message_has_substring(message, ["find","search","look for"]):
                 action = Actions.Find
-            elif message_has_substring(message, ["get","gather","collect","cut","mine","pick","obtain"]):
+            elif message_has_substring(message, ["get","gather","collect","cut","mine","pick","obtain","destroy","dig"]):
                 action = Actions.Get
             elif message_has_substring(message, ["stop","quit"]):
                 action = Actions.Stop
@@ -93,13 +94,14 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = False
 
             # Detecting object
+            obj = False
             if message_has_substring(message, ["house","hut","shelter","place to sleep","fort","home","building","structure"]):
                 obj = Objects.House
             elif message_has_substring(message, ["tunnel","cave"]):
                 obj = Objects.Tunnel
             elif message_has_substring(message, ["tree","wood","log"]):
                 obj = Objects.Tree
-            elif message_has_substring(message, ["coal","goal"]):
+            elif message_has_substring(message, ["coal","goal","cool"]):
                 obj = Objects.Coal
             elif message_has_substring(message, ["dirt","ground","grass","earth"]):
                 obj = Objects.Dirt
@@ -117,31 +119,33 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = False
 
             # Making Jack do thing based on an action, obj combo
-            if action == Actions.Build and obj == Objects.House:
-                build_house(robot)
-            if action == Actions.Build and obj == Objects.Tunnel:
-                mine_tunnel(robot)
-            if action == Actions.Find:
+            if action is Actions.Build:
+                if obj is Objects.House:
+                    build_house(robot)
+                    # robot.message_owner("Maybe I shouldn't build a house right now.")
+                if obj is Objects.Tunnel:
+                    mine_tunnel(robot)
+            if action is Actions.Find:
                 if obj in objToBlockTypes:
                     find_block(robot, objToBlockTypes[obj])
-            if action == Actions.Get:
+            if action is Actions.Get:
                 if obj in objToBlockTypes:
                     gather_block(robot, objToBlockTypes[obj])
-            if action == Actions.Stop:
+            if action is Actions.Stop:
                 pass
-            if action == Actions.Come:
+            if action is Actions.Come:
                 ownerLoc = robot.get_owner_location()
                 robot.message_owner("I'm coming from " + str(int(robot.get_location().distance(ownerLoc))) + " units away.")
-                while robot.get_location().distance(ownerLoc) > 4:
+                while robot.get_location().distance(ownerLoc) > 2:
                     direction = robot.find_path(ownerLoc)
                     robot.turn(direction)
                     robot.move(direction)
                 while robot.get_block_type(Dir.DOWN) == BlockType.AIR:
                     robot.move(Dir.DOWN)
                 robot.message_owner("I'm here!")
-            if action == Actions.Hello:
+            if action is Actions.Hello:
                 robot.message_all("Hello, I'm Jack!  Let's play Minecraft together!")
-            if action == Actions.What:
+            if action is Actions.What:
                 robot.message_all("I do the things you tell me to, such as build a house or find coal.")
 
     def on_close(self):
