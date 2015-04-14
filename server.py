@@ -4,10 +4,11 @@ import tornado.websocket
 from botchallenge import *
 import os
 import sys
-from buildhut import build_house
 
-robot = None
-robot_ready = False
+from buildhut import build_house
+from minetunnel import mine_tunnel
+from gatherblock import gather_block
+from findblock import find_block
 
 class Actions:
     Build, Find, Get, Stop, Come, Hello, What = range(7)
@@ -15,8 +16,20 @@ class Actions:
 class Objects:
     House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron, Diamond = range(10)
 
+objToBlockTypes = {Objects.Tree: [BlockType.LOG, BlockType.LOG_2],
+                          Objects.Coal: [BlockType.COAL_BLOCK, BlockType.COAL_ORE],
+                          Objects.Dirt: [BlockType.DIRT, BlockType.GRASS],
+                          Objects.Sand: [BlockType.SAND, BlockType.GRAVEL],
+                          Objects.Water: [BlockType.WATER, BlockType.STATIONARY_WATER],
+                          Objects.Stone: [BlockType.STONE, BlockType.COBBLESTONE],
+                          Objects.Iron: [BlockType.IRON_ORE],
+                          Objects.Diamond: [BlockType.DIAMOND_ORE, BlockType.DIAMOND_BLOCK]}
+
 action = False
 obj = False
+
+robot = None
+robot_ready = False
 
 if len(sys.argv) == 2:
     MINECRAFT_USERNAME = str(sys.argv[1])
@@ -90,8 +103,17 @@ class Hello(tornado.websocket.WebSocketHandler):
             else:
                 obj = False
 
+            # Making Jack do thing based on an action, obj combo
             if action == Actions.Build and obj == Objects.House:
                 build_house(robot)
+            if action == Actions.Build and obj == Objects.Tunel:
+                mine_tunnel(robot)
+            if action == Actions.Find:
+                if obj in objToBlockTypes:
+                    find_block(robot, objToBlockTypes[obj])
+            if action == Actions.Get:
+                if obj in objToBlockTypes:
+                    gather_block(robot, objToBlockTypes[obj])
 
     def on_close(self):
         print("CLOSING SERVER")

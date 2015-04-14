@@ -59,6 +59,7 @@ def build_house(robot):
 
     build_layer(robot, hut_layout_2)
     build_layer(robot, hut_layout_roof)
+    robot.message_all("Our home is ready!")
     print("done!")
 
 
