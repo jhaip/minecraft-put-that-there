@@ -5,10 +5,13 @@ from botchallenge import *
 import os
 import sys
 
-from buildhut import build_house
+# from buildhut import build_house
 from minetunnel import mine_tunnel
 from gatherblock import gather_block
 from findblock import find_block
+
+import subprocess
+import signal
 
 class Actions:
     Build, Find, Get, Stop, Come, Hello, What = range(7)
@@ -31,6 +34,8 @@ obj = False
 robot = None
 robot_ready = False
 
+proc = False
+
 if len(sys.argv) == 2:
     MINECRAFT_USERNAME = str(sys.argv[1])
     MINECRAFT_SERVER = "localhost"
@@ -44,6 +49,7 @@ if len(sys.argv) == 2:
     else:
         robot_ready = True
         print("SUCCESS: Connected to Minecraft Server at "+MINECRAFT_SERVER+" with username "+MINECRAFT_USERNAME)
+        proc = False
 else:
     print("No Minecraft username given - skipping connection to server")
 
@@ -58,6 +64,7 @@ class Hello(tornado.websocket.WebSocketHandler):
         print("Said hello to the web page")
 
     def on_message(self, message):
+        global proc
         print("Received message: '"+message+"'")
         if robot_ready:
             robot.message_all(message)
@@ -121,8 +128,14 @@ class Hello(tornado.websocket.WebSocketHandler):
             # Making Jack do thing based on an action, obj combo
             if action is Actions.Build:
                 if obj is Objects.House:
-                    build_house(robot)
+                    if proc is False:
+                        proc = subprocess.Popen(['python3', 'buildhut.py', MINECRAFT_USERNAME])
+                    else:
+                        print("processing running already")
+                    # thread.start_new_thread(build_house, (robot))
                     # robot.message_owner("Maybe I shouldn't build a house right now.")
+                    #threading.Thread(target=build_house, args=(robot,)).start()
+                    #print("CREATED NEW THREAD FOR BUILDING A HOUSE")
                 if obj is Objects.Tunnel:
                     mine_tunnel(robot)
             if action is Actions.Find:
@@ -132,7 +145,8 @@ class Hello(tornado.websocket.WebSocketHandler):
                 if obj in objToBlockTypes:
                     gather_block(robot, objToBlockTypes[obj])
             if action is Actions.Stop:
-                pass
+                os.kill(proc.pid, signal.SIGUSR1)
+                proc = False
             if action is Actions.Come:
                 ownerLoc = robot.get_owner_location()
                 robot.message_owner("I'm coming from " + str(int(robot.get_location().distance(ownerLoc))) + " units away.")
@@ -147,6 +161,8 @@ class Hello(tornado.websocket.WebSocketHandler):
                 robot.message_all("Hello, I'm Jack!  Let's play Minecraft together!")
             if action is Actions.What:
                 robot.message_all("I do the things you tell me to, such as build a house or find coal.")
+            if action is Actions.Stop:
+                stopit.stop = True
 
     def on_close(self):
         print("CLOSING SERVER")

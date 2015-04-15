@@ -2,6 +2,29 @@
 Builds a simple dirt hut to shelter you from the enemies at night.
 """
 from botchallenge import *
+import sys
+
+print("INSIDE BUILD HUT")
+
+robot = None
+robot_ready = False
+
+if len(sys.argv) == 2:
+    MINECRAFT_USERNAME = str(sys.argv[1])
+    MINECRAFT_SERVER = "localhost"
+    try:
+        robot = Robot(MINECRAFT_USERNAME, MINECRAFT_SERVER)
+    except:
+        print("")
+        print("WARNING: Could not connect to Minecraft server")
+        print("Did you really want to connect as "+MINECRAFT_USERNAME+" to the server at "+MINECRAFT_SERVER+"?")
+        print("And make sure the Modified Bukkit Server is running!")
+    else:
+        robot_ready = True
+        print("SUCCESS: Connected to Minecraft Server at "+MINECRAFT_SERVER+" with username "+MINECRAFT_USERNAME)
+else:
+    print("No Minecraft username given - skipping connection to server")
+
 
 hut_layout = """
  xxxxx 
@@ -62,6 +85,7 @@ def build_house(robot):
     robot.message_all("Our home is ready!")
     print("done!")
 
-
+if robot_ready is True:
+    build_house(robot)
 
 
