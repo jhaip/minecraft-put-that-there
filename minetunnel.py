@@ -4,6 +4,7 @@ is facing when it starts.
 """
 
 from botchallenge import *
+import sys
 
 def mine_if_solid(robot, direction):
     """Mines the block only if it's a solid block (won't mine torches away)."""
@@ -35,3 +36,6 @@ def mine_tunnel(robot):
         robot.move(Dir.FORWARD)
     robot.message_all("Tunnel complete!")
     print("done!")
+
+robot = Robot(str(sys.argv[1]), "localhost")
+mine_tunnel(robot)

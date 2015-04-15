@@ -132,21 +132,36 @@ class Hello(tornado.websocket.WebSocketHandler):
                         proc = subprocess.Popen(['python3', 'buildhut.py', MINECRAFT_USERNAME])
                     else:
                         print("processing running already")
-                    # thread.start_new_thread(build_house, (robot))
-                    # robot.message_owner("Maybe I shouldn't build a house right now.")
-                    #threading.Thread(target=build_house, args=(robot,)).start()
-                    #print("CREATED NEW THREAD FOR BUILDING A HOUSE")
                 if obj is Objects.Tunnel:
-                    mine_tunnel(robot)
+                    # mine_tunnel(robot)
+                    if proc is False:
+                        proc = subprocess.Popen(['python3', 'minetunnel.py', MINECRAFT_USERNAME])
+                    else:
+                        print("processing running already")
             if action is Actions.Find:
                 if obj in objToBlockTypes:
-                    find_block(robot, objToBlockTypes[obj])
+                    # find_block(robot, objToBlockTypes[obj])
+                    if proc is False:
+                        proc = subprocess.Popen(['python3', 
+                                                'findblock.py', 
+                                                MINECRAFT_USERNAME, 
+                                                str(objToBlockTypes[obj]).replace(' ','')])
+                    else:
+                        print("processing running already")
             if action is Actions.Get:
                 if obj in objToBlockTypes:
-                    gather_block(robot, objToBlockTypes[obj])
+                    # gather_block(robot, objToBlockTypes[obj])
+                    if proc is False:
+                        proc = subprocess.Popen(['python3', 
+                                                'gatherblock.py', 
+                                                MINECRAFT_USERNAME, 
+                                                str(objToBlockTypes[obj]).replace(' ','')])
+                    else:
+                        print("processing running already")
             if action is Actions.Stop:
-                os.kill(proc.pid, signal.SIGUSR1)
-                proc = False
+                if proc is not False:
+                    os.kill(proc.pid, signal.SIGUSR1)
+                    proc = False
             if action is Actions.Come:
                 ownerLoc = robot.get_owner_location()
                 robot.message_owner("I'm coming from " + str(int(robot.get_location().distance(ownerLoc))) + " units away.")
@@ -161,8 +176,6 @@ class Hello(tornado.websocket.WebSocketHandler):
                 robot.message_all("Hello, I'm Jack!  Let's play Minecraft together!")
             if action is Actions.What:
                 robot.message_all("I do the things you tell me to, such as build a house or find coal.")
-            if action is Actions.Stop:
-                stopit.stop = True
 
     def on_close(self):
         print("CLOSING SERVER")
