@@ -23,7 +23,6 @@ TARGET_LIST_ARG = [x[:-1].split('(') for x in TARGET_LIST_ARG]
 TARGET_LIST_ARG = [BlockType(x[0], int(x[1])) for x in TARGET_LIST_ARG]
 
 robot = Robot(str(sys.argv[1]), "localhost")
-robot.message_all(str(TARGET_LIST_ARG))
 find_block(robot, TARGET_LIST_ARG)
 
 sys.exit() # make sure the program dies

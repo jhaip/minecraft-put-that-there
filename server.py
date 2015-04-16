@@ -62,6 +62,8 @@ def run_new_command(command_line_array):
         proc.terminate()
         proc.wait()
         print("It's killed now")
+    command_line_array[0] = "command-scripts/"+command_line_array[0]
+    command_line_array = ['python3']+command_line_array
     proc = subprocess.Popen(command_line_array)
 
 
@@ -137,19 +139,17 @@ class Hello(tornado.websocket.WebSocketHandler):
             # Making Jack do thing based on an action, obj combo
             if action is Actions.Build:
                 if obj is Objects.House:
-                    run_new_command(['python3', 'buildhut.py', MINECRAFT_USERNAME])
+                    run_new_command(['buildhut.py', MINECRAFT_USERNAME])
                 if obj is Objects.Tunnel:
-                    run_new_command(['python3', 'minetunnel.py', MINECRAFT_USERNAME])
+                    run_new_command(['minetunnel.py', MINECRAFT_USERNAME])
             if action is Actions.Find:
                 if obj in objToBlockTypes:
-                    run_new_command(['python3', 
-                                    'findblock.py', 
+                    run_new_command(['findblock.py', 
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
             if action is Actions.Get:
                 if obj in objToBlockTypes:
-                    run_new_command(['python3', 
-                                    'gatherblock.py', 
+                    run_new_command(['gatherblock.py', 
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
             if action is Actions.Stop:
@@ -158,7 +158,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                     proc.wait()
                     proc = False
             if action is Actions.Come:
-                run_new_command(['python3', 'comehere.py', MINECRAFT_USERNAME])
+                run_new_command(['comehere.py', MINECRAFT_USERNAME])
             if action is Actions.Hello:
                 robot.message_all("Hello, I'm Jack!  Let's play Minecraft together!")
             if action is Actions.What:
