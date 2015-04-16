@@ -22,7 +22,8 @@ objToBlockTypes = {Objects.Tree: [BlockType.LOG, BlockType.LOG_2],
                           Objects.Water: [BlockType.WATER, BlockType.STATIONARY_WATER],
                           Objects.Stone: [BlockType.STONE, BlockType.COBBLESTONE],
                           Objects.Iron: [BlockType.IRON_ORE],
-                          Objects.Diamond: [BlockType.DIAMOND_ORE, BlockType.DIAMOND_BLOCK]}
+                          Objects.Diamond: [BlockType.DIAMOND_ORE, BlockType.DIAMOND_BLOCK],
+                          Objects.House: [BlockType.COBBLESTONE]}
 
 action = False
 obj = False
