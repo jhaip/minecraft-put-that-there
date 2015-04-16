@@ -1,6 +1,7 @@
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
+import tornado.httpserver
 from botchallenge import *
 import os
 import sys
@@ -9,6 +10,8 @@ from buildhut import build_house
 from minetunnel import mine_tunnel
 from gatherblock import gather_block
 from findblock import find_block
+
+import ssl
 
 class Actions:
     Build, Find, Get, Stop, Come, Hello, What = range(7)
@@ -171,6 +174,10 @@ class Application(tornado.web.Application):
 
 if __name__ == "__main__":
     app = Application()
-    app.listen(8888)
+    # app.listen(8888)
+    data_dir = os.path.dirname(__file__)
+    print(os.path.join(data_dir, "localhost.crt"))
+    http_server = tornado.httpserver.HTTPServer(app)
+    http_server.listen(8888)
     print("Starting Tornado Server at localhost:8888")
     tornado.ioloop.IOLoop.instance().start()
