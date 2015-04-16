@@ -39,3 +39,5 @@ def mine_tunnel(robot):
 
 robot = Robot(str(sys.argv[1]), "localhost")
 mine_tunnel(robot)
+
+sys.exit() # make sure the program dies

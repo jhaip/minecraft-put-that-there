@@ -6,9 +6,9 @@ import os
 import sys
 
 # from buildhut import build_house
-from minetunnel import mine_tunnel
-from gatherblock import gather_block
-from findblock import find_block
+# from minetunnel import mine_tunnel
+# from gatherblock import gather_block
+# from findblock import find_block
 
 import subprocess
 import signal
@@ -56,6 +56,15 @@ else:
 
 def message_has_substring(message, substring_list):
     return any(substr in message for substr in substring_list)
+
+def run_new_command(command_line_array):
+    global proc
+    if proc is not False:
+        print("found a command already running in the background")
+        proc.terminate()
+        proc.wait()
+        print("It's killed now")
+    proc = subprocess.Popen(command_line_array)
 
 
 class Hello(tornado.websocket.WebSocketHandler):
@@ -128,50 +137,29 @@ class Hello(tornado.websocket.WebSocketHandler):
             # Making Jack do thing based on an action, obj combo
             if action is Actions.Build:
                 if obj is Objects.House:
-                    if proc is False:
-                        proc = subprocess.Popen(['python3', 'buildhut.py', MINECRAFT_USERNAME])
-                    else:
-                        print("processing running already")
+                    run_new_command(['python3', 'buildhut.py', MINECRAFT_USERNAME])
                 if obj is Objects.Tunnel:
-                    # mine_tunnel(robot)
-                    if proc is False:
-                        proc = subprocess.Popen(['python3', 'minetunnel.py', MINECRAFT_USERNAME])
-                    else:
-                        print("processing running already")
+                    run_new_command(['python3', 'minetunnel.py', MINECRAFT_USERNAME])
             if action is Actions.Find:
                 if obj in objToBlockTypes:
-                    # find_block(robot, objToBlockTypes[obj])
-                    if proc is False:
-                        proc = subprocess.Popen(['python3', 
-                                                'findblock.py', 
-                                                MINECRAFT_USERNAME, 
-                                                str(objToBlockTypes[obj]).replace(' ','')])
-                    else:
-                        print("processing running already")
+                    run_new_command(['python3', 
+                                    'findblock.py', 
+                                    MINECRAFT_USERNAME, 
+                                    str(objToBlockTypes[obj]).replace(' ','')])
             if action is Actions.Get:
                 if obj in objToBlockTypes:
-                    # gather_block(robot, objToBlockTypes[obj])
-                    if proc is False:
-                        proc = subprocess.Popen(['python3', 
-                                                'gatherblock.py', 
-                                                MINECRAFT_USERNAME, 
-                                                str(objToBlockTypes[obj]).replace(' ','')])
-                    else:
-                        print("processing running already")
+                    run_new_command(['python3', 
+                                    'gatherblock.py', 
+                                    MINECRAFT_USERNAME, 
+                                    str(objToBlockTypes[obj]).replace(' ','')])
             if action is Actions.Stop:
                 if proc is not False:
-                    os.kill(proc.pid, signal.SIGUSR1)
+                    # os.kill(proc.pid, signal.SIGUSR1)
+                    proc.terminate() # if not forceful enough use .kill()
+                    proc.wait()
                     proc = False
             if action is Actions.Come:
-                ownerLoc = robot.get_owner_location()
-                robot.message_owner("I'm coming from " + str(int(robot.get_location().distance(ownerLoc))) + " units away.")
-                while robot.get_location().distance(ownerLoc) > 2:
-                    direction = robot.find_path(ownerLoc)
-                    robot.turn(direction)
-                    robot.move(direction)
-                while robot.get_block_type(Dir.DOWN) == BlockType.AIR:
-                    robot.move(Dir.DOWN)
-                robot.message_owner("I'm here!")
+                run_new_command(['python3', 'comehere.py', MINECRAFT_USERNAME])
             if action is Actions.Hello:
                 robot.message_all("Hello, I'm Jack!  Let's play Minecraft together!")
             if action is Actions.What:
