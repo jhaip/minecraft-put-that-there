@@ -13,7 +13,7 @@ class Actions:
     Build, Find, Get, Stop, Come, Hello, What = range(7)
 
 class Objects:
-    House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron, Diamond = range(10)
+    House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron, Diamond, Grass = range(11)
 
 objToBlockTypes = {Objects.Tree: [BlockType.LOG, BlockType.LOG_2],
                           Objects.Coal: [BlockType.COAL_BLOCK, BlockType.COAL_ORE],
@@ -23,7 +23,8 @@ objToBlockTypes = {Objects.Tree: [BlockType.LOG, BlockType.LOG_2],
                           Objects.Stone: [BlockType.STONE, BlockType.COBBLESTONE],
                           Objects.Iron: [BlockType.IRON_ORE],
                           Objects.Diamond: [BlockType.DIAMOND_ORE, BlockType.DIAMOND_BLOCK],
-                          Objects.House: [BlockType.COBBLESTONE]}
+                          Objects.House: [BlockType.COBBLESTONE],
+                          Objects.Grass: [BlockType.LONG_GRASS]}
 
 action = False
 obj = False
@@ -93,7 +94,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = Actions.Build
             elif message_has_substring(message, ["find","search","look for"]):
                 action = Actions.Find
-            elif message_has_substring(message, ["get","gather","collect","cut","mine","pick","obtain","destroy","dig"]):
+            elif message_has_substring(message, ["get","gather","collect","cut","mine","pick","obtain","destroy","dig","chop"]):
                 action = Actions.Get
             elif message_has_substring(message, ["stop","quit"]):
                 action = Actions.Stop
@@ -116,7 +117,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = Objects.Tree
             elif message_has_substring(message, ["coal","goal","cool"]):
                 obj = Objects.Coal
-            elif message_has_substring(message, ["dirt","ground","grass","earth"]):
+            elif message_has_substring(message, ["dirt","ground","earth"]):
                 obj = Objects.Dirt
             elif message_has_substring(message, ["sand"]):
                 obj = Objects.Sand
@@ -128,6 +129,8 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = Objects.Iron
             elif message_has_substring(message, ["diamond"]):
                 obj = Objects.Diamond
+            elif message_has_substring(message, ["grass","weed"]):
+                obj = Objects.Grass
             else:
                 obj = False
 
