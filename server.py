@@ -68,6 +68,10 @@ def run_new_command(command_line_array):
 
 
 class Hello(tornado.websocket.WebSocketHandler):
+    def check_origin(self, origin):
+        # allow any websockets connections to connect
+        return True
+
     def open(self):
         self.write_message("Hello web page")
         print("Said hello to the web page")
