@@ -10,7 +10,7 @@ import signal
 import ssl
 
 class Actions:
-    Build, Find, Get, Stop, Come, Hello, What = range(7)
+    Build, Find, Get, Stop, Come, Hello, What, Flatten = range(8)
 
 class Objects:
     House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron, Diamond, Grass = range(11)
@@ -110,6 +110,8 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = Actions.Hello
             elif message_has_substring(message, ["what"]):
                 action = Actions.What
+            elif message_has_substring(message, ["flat","clear"]):
+                action = Actions.Flatten
             else:
                 action = False
 
@@ -167,6 +169,8 @@ class Hello(tornado.websocket.WebSocketHandler):
                 robot.message_all("Hello, I'm Jack!  Let's play Minecraft together!")
             if action is Actions.What:
                 robot.message_all("I do the things you tell me to, such as build a house or find coal.")
+            if action is Actions.Flatten:
+                run_new_command(['flatten.py', MINECRAFT_USERNAME])
 
     def on_close(self):
         print("CLOSING SERVER")
