@@ -14,7 +14,7 @@ def come_here(robot):
     else:
         robot.message_owner("I'm teleporting from " + str(initialDist) + " units away.")
         destLoc = Location(103, 77, 94)
-        robot.message_owner("I'm teleporting to " + str(destLoc))
+        print("teleporting to", destLoc)
         robot.teleport(destLoc)
     while robot.get_block_type(Dir.DOWN) == BlockType.AIR:
         robot.move(Dir.DOWN)
