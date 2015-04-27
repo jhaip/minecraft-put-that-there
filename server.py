@@ -10,8 +10,8 @@ import signal
 import ssl
 
 class Actions:
-    [Build, Find, Get, Stop, Come, Hello, What, Where, Flatten,
-     CheckInventory] = range(10)
+    [Build, Get, Stop, Come, Hello, What, Where, Flatten,
+     CheckInventory] = range(9)
 
 class Objects:
     [House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron,
@@ -106,9 +106,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = Actions.What
             elif message_has_substring(message, ["build","make"]):
                 action = Actions.Build
-            elif message_has_substring(message, ["find","search","look for"]):
-                action = Actions.Find
-            elif message_has_substring(message, ["get","gather","collect","cut","mine","pick","obtain","destroy","dig","chop"]):
+            elif message_has_substring(message, ["find","search","look for","get","gather","collect","cut","mine","pick","obtain","destroy","dig","chop"]):
                 action = Actions.Get
             elif message_has_substring(message, ["come"]):
                 action = Actions.Come
@@ -158,11 +156,6 @@ class Hello(tornado.websocket.WebSocketHandler):
                     run_new_command(['buildhut.py', MINECRAFT_USERNAME])
                 if obj is Objects.Tunnel:
                     run_new_command(['minetunnel.py', MINECRAFT_USERNAME])
-            if action is Actions.Find:
-                if obj in objToBlockTypes:
-                    run_new_command(['findblock.py', 
-                                    MINECRAFT_USERNAME, 
-                                    str(objToBlockTypes[obj]).replace(' ','')])
             if action is Actions.Get:
                 if obj in objToBlockTypes:
                     run_new_command(['gatherblock.py', 
