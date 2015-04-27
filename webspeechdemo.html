@@ -132,6 +132,10 @@
     &nbsp;&nbsp;
     <select id="select_dialect"></select>
   </div>
+  <div id="div_send_text">
+    <textarea id="send_text_area" rows="4" cols="50"></textarea>
+    <input type="submit" value="Send command"  onclick="return sendCommandManually();">
+  </div>
 </div>
 <script>
 var langs =
@@ -314,6 +318,13 @@ if (!('webkitSpeechRecognition' in window)) {
       showButtons('inline-block');
     }
   };
+}
+
+function sendCommandManually() {
+  var str = document.getElementById("send_text_area").value;
+  str = str.toLowerCase();
+  ws.send(str);
+  document.getElementById("send_text_area").value = "";
 }
 
 function upgrade() {
