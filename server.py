@@ -181,6 +181,19 @@ class Hello(tornado.websocket.WebSocketHandler):
                     Utilities.get_inventory(robot)
                 if obj is Objects.Jack:
                     robot.message_all("I do the things you tell me to, such as build a house or find coal.")
+                if obj is Objects.That:
+                    owner_target_block = robot.get_owner_target_block()
+                    owner_target_block_type = robot.get_block_type_at(owner_target_block)
+                    if owner_target_block_type is not None:
+                        owner_target_block_type_str = str(owner_target_block_type).replace("_","").lower().replace("stationary","")
+                        if owner_target_block_type_str[-1] in "0123456789":
+                            owner_target_block_type_str = owner_target_block_type_str[:-1]
+                        if owner_target_block_type_str == "pumpkin":
+                            if owner_target_block == robot.get_location():
+                                owner_target_block_type_str = "me"
+                            else:
+                                owner_target_block_type_str = "my cousin"
+                        robot.message_owner("That is "+owner_target_block_type_str)
             if action is Actions.Where:
                 if obj is Objects.Jack:
                     dist = round(robot.get_location().distance(robot.get_owner_location()), 2)
