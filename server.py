@@ -10,12 +10,12 @@ import signal
 import ssl
 
 class Actions:
-    [Build, Find, Get, Stop, Come, Hello, What, Where, Flatten,
-     CheckInventory] = range(10)
+    [Build, Find, Get, Stop, Come, Hello, What, Where, Why, Flatten,
+     CheckInventory] = range(11)
 
 class Objects:
     [House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron,
-     Diamond, Grass, Inventory, Jack] = range(13)
+     Diamond, Grass, Inventory, Jack, That] = range(14)
 
 objToBlockTypes = {Objects.Tree: [BlockType.LOG, BlockType.LOG_2],
                           Objects.Coal: [BlockType.COAL_BLOCK, BlockType.COAL_ORE],
@@ -104,6 +104,8 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = Actions.Where
             elif message_has_substring(message, ["what"]):
                 action = Actions.What
+            elif message_has_substring(message, ["why"]):
+                action = Actions.Why
             elif message_has_substring(message, ["build","make"]):
                 action = Actions.Build
             elif message_has_substring(message, ["find","search","look for"]):
@@ -116,7 +118,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = Actions.Hello
             elif message_has_substring(message, ["flat","clear"]):
                 action = Actions.Flatten
-            elif message_has_substring(message, ["do you have","inventory"]):
+            elif message_has_substring(message, ["do you have","inventory","how much"]):
                 action = Actions.CheckInventory
             else:
                 action = False
@@ -147,6 +149,8 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = Objects.Grass
             elif message_has_substring(message, ["inventory"]):
                 obj = Objects.Inventory
+            elif message_has_substring(message, ["this","that","those","these","there"]):
+                obj = Objects.That
             elif message_has_substring(message, ["you","Jack"]): #keep this last
                 obj = Objects.Jack
             else:
@@ -158,6 +162,8 @@ class Hello(tornado.websocket.WebSocketHandler):
                     run_new_command(['buildhut.py', MINECRAFT_USERNAME])
                 if obj is Objects.Tunnel:
                     run_new_command(['minetunnel.py', MINECRAFT_USERNAME])
+                else:
+                    robot.message_owner("I don't know how to build that.")
             if action is Actions.Find:
                 if obj in objToBlockTypes:
                     run_new_command(['findblock.py', 
@@ -186,6 +192,8 @@ class Hello(tornado.websocket.WebSocketHandler):
                 if obj is Objects.Jack:
                     dist = round(robot.get_location().distance(robot.get_owner_location()), 2)
                     robot.message_all("I am " + str(dist) + " units away from you.")
+            if action is Actions.Why:
+                robot.message_all("I don't know why.")
             if action is Actions.CheckInventory:
                 if obj in objToBlockTypes:
                     run_new_command(['checkinventory.py', 
