@@ -38,6 +38,7 @@ def flatten(robot, side_length, height):
         backwards = not backwards
     while robot.get_block_type(Dir.DOWN) == BlockType.AIR:
         robot.move(Dir.DOWN)
+    speak()
     robot.message_all("All clear!")
 
 robot = Robot(str(sys.argv[1]), "localhost")
