@@ -10,12 +10,12 @@ import signal
 import ssl
 
 class Actions:
-    [Build, Get, Stop, Come, Hello, What, Where, Flatten,
-     CheckInventory] = range(9)
+    [Build, Find, Get, Stop, Come, Hello, What, Where, Flatten,
+     CheckInventory] = range(10)
 
 class Objects:
     [House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron,
-     Diamond, Grass, Inventory, Jack, That] = range(14)
+     Diamond, Grass, Inventory, Jack] = range(13)
 
 objToBlockTypes = {Objects.Tree: [BlockType.LOG, BlockType.LOG_2],
                           Objects.Coal: [BlockType.COAL_BLOCK, BlockType.COAL_ORE],
@@ -106,7 +106,9 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = Actions.What
             elif message_has_substring(message, ["build","make"]):
                 action = Actions.Build
-            elif message_has_substring(message, ["find","search","look for","get","gather","collect","cut","mine","pick","obtain","destroy","dig","chop"]):
+            elif message_has_substring(message, ["find","search","look for"]):
+                action = Actions.Find
+            elif message_has_substring(message, ["get","gather","collect","cut","mine","pick","obtain","destroy","dig","chop"]):
                 action = Actions.Get
             elif message_has_substring(message, ["come"]):
                 action = Actions.Come
@@ -145,8 +147,6 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = Objects.Grass
             elif message_has_substring(message, ["inventory"]):
                 obj = Objects.Inventory
-            elif message_has_substring(message, ["that"]):
-                obj = Objects.That
             elif message_has_substring(message, ["you","Jack"]): #keep this last
                 obj = Objects.Jack
             else:
@@ -158,6 +158,11 @@ class Hello(tornado.websocket.WebSocketHandler):
                     run_new_command(['buildhut.py', MINECRAFT_USERNAME])
                 if obj is Objects.Tunnel:
                     run_new_command(['minetunnel.py', MINECRAFT_USERNAME])
+            if action is Actions.Find:
+                if obj in objToBlockTypes:
+                    run_new_command(['findblock.py', 
+                                    MINECRAFT_USERNAME, 
+                                    str(objToBlockTypes[obj]).replace(' ','')])
             if action is Actions.Get:
                 if obj in objToBlockTypes:
                     run_new_command(['gatherblock.py', 
@@ -174,24 +179,9 @@ class Hello(tornado.websocket.WebSocketHandler):
                 robot.message_all("Hello, I'm Jack!  Let's play Minecraft together!")
             if action is Actions.What:
                 if obj is Objects.Inventory:
-                    inventoryItems = [str(key).lower() for (key, val) in robot.get_inventory()]
-                    robot.message_all("In my inventory, I have: "
-                                      + str(inventoryItems).strip('[').strip(']').replace("'", ""))
+                    Utilities.get_inventory(robot)
                 if obj is Objects.Jack:
                     robot.message_all("I do the things you tell me to, such as build a house or find coal.")
-                if obj is Objects.That:
-                    owner_target_block = robot.get_owner_target_block()
-                    owner_target_block_type = robot.get_block_type_at(owner_target_block)
-                    if owner_target_block_type is not None:
-                        owner_target_block_type_str = str(owner_target_block_type).replace("_","").lower().replace("stationary","")
-                        if owner_target_block_type_str[-1] in "0123456789":
-                            owner_target_block_type_str = owner_target_block_type_str[:-1]
-                        if owner_target_block_type_str == "pumpkin":
-                            if owner_target_block == robot.get_location():
-                                owner_target_block_type_str = "me"
-                            else:
-                                owner_target_block_type_str = "my cousin"
-                        robot.message_owner("That is "+owner_target_block_type_str)
             if action is Actions.Where:
                 if obj is Objects.Jack:
                     dist = round(robot.get_location().distance(robot.get_owner_location()), 2)
@@ -202,13 +192,18 @@ class Hello(tornado.websocket.WebSocketHandler):
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
                 else:
-                    robot.message_all("I don't know what kind of block type that is.")
+                    Utilities.get_inventory(robot)
             if action is Actions.Flatten:
                 run_new_command(['flatten.py', MINECRAFT_USERNAME])
 
     def on_close(self):
         print("CLOSING SERVER")
 
+class Utilities:
+    def get_inventory(robot):
+        inventoryItems = [str(key).lower() for (key, val) in robot.get_inventory()]
+        robot.message_all("In my inventory, I have: "
+                          + str(inventoryItems).strip('[').strip(']').replace("'", ""))
 
 class Main(tornado.web.RequestHandler):
     def get(self):
