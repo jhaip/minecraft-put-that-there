@@ -179,7 +179,7 @@ class Hello(tornado.websocket.WebSocketHandler):
 class Main(tornado.web.RequestHandler):
     def get(self):
         # This could be a template, too.
-        self.render("webspeechdemo.html")
+        self.render("index.html")
 
 class Application(tornado.web.Application):
     def __init__(self):
