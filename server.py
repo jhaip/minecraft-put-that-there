@@ -179,8 +179,9 @@ class Hello(tornado.websocket.WebSocketHandler):
                 robot.message_all("Hello, I'm Jack!  Let's play Minecraft together!")
             if action is Actions.What:
                 if obj is Objects.Inventory:
-                    inventory = robot.get_inventory() #todo format
-                    robot.message_all("In my inventory, I have: " + str(inventory))
+                    inventoryItems = [str(key).lower() for (key, val) in robot.get_inventory()]
+                    robot.message_all("In my inventory, I have: "
+                                      + str(inventoryItems).strip('[').strip(']').replace("'", ""))
                 if obj is Objects.Jack:
                     robot.message_all("I do the things you tell me to, such as build a house or find coal.")
             if action is Actions.Where:
@@ -189,7 +190,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                     robot.message_all("I am " + str(dist) + " units away from you.")
             if action is Actions.CheckInventory:
                 if obj in objToBlockTypes:
-                    run_new_command(['findblock.py', 
+                    run_new_command(['checkinventory.py', 
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
                 else:
