@@ -10,12 +10,12 @@ import signal
 import ssl
 
 class Actions:
-    [Build, Get, Stop, Come, Hello, What, Where, Why, Flatten,
-     CheckInventory] = range(10)
+    [Build, Get, Give, Stop, Come, Go, Hello, What, Where, Why, Flatten,
+     CheckInventory] = range(12)
 
 class Objects:
     [House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron,
-     Diamond, Grass, Inventory, Jack, That] = range(14)
+     Diamond, Grass, Inventory, Jack, That, There] = range(15)
 
 objToBlockTypes = {Objects.Tree: [BlockType.LOG, BlockType.LOG_2],
                           Objects.Coal: [BlockType.COAL_BLOCK, BlockType.COAL_ORE],
@@ -108,14 +108,18 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = Actions.Why
             elif message_has_substring(message, ["build","make"]):
                 action = Actions.Build
-            elif message_has_substring(message, ["find","search","look for","get","gather","collect","cut","mine","pick","obtain","destroy","dig","chop"]):
+            elif message_has_substring(message, ["find","search","look for","get","gather","collect","cut","mine","pick","obtain","destroy","dig","chop","bring"]):
                 action = Actions.Get
+            elif message_has_substring(message, ["flat","clear"]):
+                action = Actions.Flatten
+            elif message_has_substring(message, ["give","drop","throw"]):
+                action = Actions.Give
+            elif message_has_substring(message, ["go"]): #keep this near end
+                action = Actions.Go
             elif message_has_substring(message, ["come"]):
                 action = Actions.Come
             elif message_has_substring(message, ["hello","hi","hey","howdy","high"]):
                 action = Actions.Hello
-            elif message_has_substring(message, ["flat","clear"]):
-                action = Actions.Flatten
             elif message_has_substring(message, ["do you have","inventory","how much"]):
                 action = Actions.CheckInventory
             else:
@@ -147,8 +151,10 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = Objects.Grass
             elif message_has_substring(message, ["inventory"]):
                 obj = Objects.Inventory
-            elif message_has_substring(message, ["this","that","those","these","there"]):
+            elif message_has_substring(message, ["this","that","those","these"]):
                 obj = Objects.That
+            elif message_has_substring(message, ["there"]):
+                obj = Objects.There
             elif message_has_substring(message, ["you","Jack"]): #keep this last
                 obj = Objects.Jack
             else:
@@ -167,11 +173,21 @@ class Hello(tornado.websocket.WebSocketHandler):
                     run_new_command(['gatherblock.py', 
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
+                else:
+                    robot.message_owner("I don't know how to get that.") #todo get that
             if action is Actions.Stop:
                 if proc is not False:
                     proc.terminate() # if not forceful enough use .kill()
                     proc.wait()
                     proc = False
+            if action is Actions.Give:
+                if obj in objToBlockTypes:
+                    run_new_command(['giveblock.py', #todo
+                                    MINECRAFT_USERNAME, 
+                                    str(objToBlockTypes[obj]).replace(' ','')])
+            if action is Actions.Go:
+                if obj is Objects.There:
+                    run_new_command(['gothere.py', MINECRAFT_USERNAME])
             if action is Actions.Come:
                 run_new_command(['comehere.py', MINECRAFT_USERNAME])
             if action is Actions.Hello:
