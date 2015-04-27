@@ -10,10 +10,12 @@ import signal
 import ssl
 
 class Actions:
-    Build, Find, Get, Stop, Come, Hello, What, Flatten = range(8)
+    [Build, Find, Get, Stop, Come, Hello, What, Where, Flatten,
+     CheckInventory] = range(10)
 
 class Objects:
-    House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron, Diamond, Grass = range(11)
+    [House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron,
+     Diamond, Grass, Inventory, Jack] = range(13)
 
 objToBlockTypes = {Objects.Tree: [BlockType.LOG, BlockType.LOG_2],
                           Objects.Coal: [BlockType.COAL_BLOCK, BlockType.COAL_ORE],
@@ -96,22 +98,26 @@ class Hello(tornado.websocket.WebSocketHandler):
                 
             # Detecting Action
             action = False
-            if message_has_substring(message, ["build","make"]):
+            if message_has_substring(message, ["stop","quit"]):
+                action = Actions.Stop
+            elif message_has_substring(message, ["where"]):
+                action = Actions.Where
+            elif message_has_substring(message, ["what"]):
+                action = Actions.What
+            elif message_has_substring(message, ["build","make"]):
                 action = Actions.Build
             elif message_has_substring(message, ["find","search","look for"]):
                 action = Actions.Find
             elif message_has_substring(message, ["get","gather","collect","cut","mine","pick","obtain","destroy","dig","chop"]):
                 action = Actions.Get
-            elif message_has_substring(message, ["stop","quit"]):
-                action = Actions.Stop
             elif message_has_substring(message, ["come"]):
                 action = Actions.Come
-            elif message_has_substring(message, ["hello","hi","hey","howdy"]):
+            elif message_has_substring(message, ["hello","hi","hey","howdy","high"]):
                 action = Actions.Hello
-            elif message_has_substring(message, ["what"]):
-                action = Actions.What
             elif message_has_substring(message, ["flat","clear"]):
                 action = Actions.Flatten
+            elif message_has_substring(message, ["do you have","inventory"]):
+                action = Actions.CheckInventory
             else:
                 action = False
 
@@ -139,6 +145,10 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = Objects.Diamond
             elif message_has_substring(message, ["grass","weed"]):
                 obj = Objects.Grass
+            elif message_has_substring(message, ["inventory"]):
+                obj = Objects.Inventory
+            elif message_has_substring(message, ["you","Jack"]): #keep this last
+                obj = Objects.Jack
             else:
                 obj = False
 
@@ -168,13 +178,32 @@ class Hello(tornado.websocket.WebSocketHandler):
             if action is Actions.Hello:
                 robot.message_all("Hello, I'm Jack!  Let's play Minecraft together!")
             if action is Actions.What:
-                robot.message_all("I do the things you tell me to, such as build a house or find coal.")
+                if obj is Objects.Inventory:
+                    Utilities.get_inventory(robot)
+                if obj is Objects.Jack:
+                    robot.message_all("I do the things you tell me to, such as build a house or find coal.")
+            if action is Actions.Where:
+                if obj is Objects.Jack:
+                    dist = round(robot.get_location().distance(robot.get_owner_location()), 2)
+                    robot.message_all("I am " + str(dist) + " units away from you.")
+            if action is Actions.CheckInventory:
+                if obj in objToBlockTypes:
+                    run_new_command(['checkinventory.py', 
+                                    MINECRAFT_USERNAME, 
+                                    str(objToBlockTypes[obj]).replace(' ','')])
+                else:
+                    Utilities.get_inventory(robot)
             if action is Actions.Flatten:
                 run_new_command(['flatten.py', MINECRAFT_USERNAME])
 
     def on_close(self):
         print("CLOSING SERVER")
 
+class Utilities:
+    def get_inventory(robot):
+        inventoryItems = [str(key).lower() for (key, val) in robot.get_inventory()]
+        robot.message_all("In my inventory, I have: "
+                          + str(inventoryItems).strip('[').strip(']').replace("'", ""))
 
 class Main(tornado.web.RequestHandler):
     def get(self):
