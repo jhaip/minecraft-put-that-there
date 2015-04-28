@@ -19,7 +19,7 @@ class Objects:
      Diamond, Grass, Seeds, Inventory, Jack, That, There] = range(16)
 
 objToBlockTypes = {Objects.Tree: [BlockType.LOG, BlockType.LOG_2],
-                   Objects.Coal: [BlockType.COAL_BLOCK, BlockType.COAL_ORE],
+                   Objects.Coal: [BlockType.COAL_BLOCK, BlockType.COAL_ORE, BlockType.COAL],
                    Objects.Dirt: [BlockType.DIRT, BlockType.GRASS],
                    Objects.Sand: [BlockType.SAND, BlockType.GRAVEL],
                    Objects.Water: [BlockType.WATER, BlockType.STATIONARY_WATER],
@@ -145,7 +145,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = Objects.Tunnel
             elif message_has_substring(message, ["tree","wood","log"]):
                 obj = Objects.Tree
-            elif message_has_substring(message, ["coal","goal","cool"]):
+            elif message_has_substring(message, ["coal","goal","cool","cold","Cole","Coke","call"]):
                 obj = Objects.Coal
             elif message_has_substring(message, ["dirt","ground","earth"]):
                 obj = Objects.Dirt
@@ -219,7 +219,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                 else:
                     robot.message_all("I can give you items from my inventory if you tell me what to give you.")
             if action is Actions.Go:
-                if obj is Objects.There:
+                if obj is Objects.There or obj is Objects.That:
                     run_new_command(['gothere.py', MINECRAFT_USERNAME])
                 else:
                     robot.message_owner("You can point to a location and tell me to go there.")

@@ -1,4 +1,6 @@
 from botchallenge import *
+import random
+import subprocess
 
 def go_to_owner(robot, teleportThreshold):
     ownerLoc = robot.get_owner_location()
@@ -48,3 +50,8 @@ def find_air_near(robot, loc, maxRadius=3): #inefficient (todo)
                     if robot.get_block_type_at(newLoc) == BlockType.AIR:
                         return newLoc
     return None
+
+def speak():
+    num = random.randint(1,3)
+    audio_file = "sounds/voice-short-"+str(num)+".wav"
+    return_code = subprocess.call(["afplay", audio_file])

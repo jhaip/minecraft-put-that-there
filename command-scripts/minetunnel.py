@@ -5,6 +5,7 @@ is facing when it starts.
 
 from botchallenge import *
 import sys
+from pathfindingUtils import *
 
 def mine_if_solid(robot, direction):
     """Mines the block only if it's a solid block (won't mine torches away)."""

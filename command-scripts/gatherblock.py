@@ -3,6 +3,7 @@ Example robot which finds trees and gathers wood.
 """
 from botchallenge import *
 import sys
+from pathfindingUtils import *
 
 def gather_block(robot, TARGET_LIST):
     print("*** STARTING GATHER_BLOCK SCRIPT")
@@ -12,6 +13,11 @@ def gather_block(robot, TARGET_LIST):
     for t in TARGET_LIST:
         locations += robot.find_type_nearby(t)
     print(locations)
+
+    if len(locations) == 0:
+        speak()
+        robot.message_owner("I didn't find any.")
+        return
 
     def coordDist(x):
         return int(x.distance(startLocation))

@@ -1,5 +1,6 @@
 from botchallenge import *
 import sys
+from pathfindingUtils import *
 
 def check_inventory(robot, TARGET_LIST):
     print("*** STARTING CHECK_INVENTORY SCRIPT")

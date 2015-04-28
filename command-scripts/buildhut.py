@@ -3,6 +3,7 @@ Builds a simple dirt hut to shelter you from the enemies at night.
 """
 from botchallenge import *
 import sys
+from pathfindingUtils import *
 
 hut_layout = """
  xxxxx 

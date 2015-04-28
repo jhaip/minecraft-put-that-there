@@ -1,5 +1,5 @@
 from botchallenge import *
-from pathfindingUtils import go_to_owner, face_owner
+from pathfindingUtils import *
 import sys
 
 def give_block(robot, TARGET_LIST):
