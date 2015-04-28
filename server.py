@@ -15,18 +15,19 @@ class Actions:
 
 class Objects:
     [House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron,
-     Diamond, Grass, Inventory, Jack, That, There] = range(15)
+     Diamond, Grass, Seeds, Inventory, Jack, That, There] = range(16)
 
 objToBlockTypes = {Objects.Tree: [BlockType.LOG, BlockType.LOG_2],
-                          Objects.Coal: [BlockType.COAL_BLOCK, BlockType.COAL_ORE],
-                          Objects.Dirt: [BlockType.DIRT, BlockType.GRASS],
-                          Objects.Sand: [BlockType.SAND, BlockType.GRAVEL],
-                          Objects.Water: [BlockType.WATER, BlockType.STATIONARY_WATER],
-                          Objects.Stone: [BlockType.STONE, BlockType.COBBLESTONE],
-                          Objects.Iron: [BlockType.IRON_ORE],
-                          Objects.Diamond: [BlockType.DIAMOND_ORE, BlockType.DIAMOND_BLOCK],
-                          Objects.House: [BlockType.COBBLESTONE],
-                          Objects.Grass: [BlockType.LONG_GRASS]}
+                   Objects.Coal: [BlockType.COAL_BLOCK, BlockType.COAL_ORE],
+                   Objects.Dirt: [BlockType.DIRT, BlockType.GRASS],
+                   Objects.Sand: [BlockType.SAND, BlockType.GRAVEL],
+                   Objects.Water: [BlockType.WATER, BlockType.STATIONARY_WATER],
+                   Objects.Stone: [BlockType.STONE, BlockType.COBBLESTONE],
+                   Objects.Iron: [BlockType.IRON_ORE],
+                   Objects.Diamond: [BlockType.DIAMOND_ORE, BlockType.DIAMOND_BLOCK],
+                   Objects.House: [BlockType.COBBLESTONE],
+                   Objects.Grass: [BlockType.LONG_GRASS],
+                   Objects.Seeds: [BlockType.SEEDS]}
 
 action = False
 obj = False
@@ -149,8 +150,10 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = Objects.Iron
             elif message_has_substring(message, ["diamond"]):
                 obj = Objects.Diamond
-            elif message_has_substring(message, ["grass","weed"]):
+            elif message_has_substring(message, ["grass","weed","longgrass","long grass"]):
                 obj = Objects.Grass
+            elif message_has_substring(message, ["seeds","seed"]):
+                obj = Objects.Seeds
             elif message_has_substring(message, ["this","that","those","these"]):
                 obj = Objects.That
             elif message_has_substring(message, ["inventory"]):

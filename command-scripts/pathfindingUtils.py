@@ -14,7 +14,7 @@ def go_to_owner(robot, teleportThreshold):
             return
         robot.message_owner("I'm teleporting from " + str(initialDist) + " units away.")
         robot.teleport(destLoc)
-        face_location(robot, ownerLoc)
+        face_owner(robot)
     move_to_ground(robot)
     robot.message_owner("I'm here!")
 
@@ -23,6 +23,9 @@ def walk_toward_location(robot, destLoc, radius):
         direction = robot.find_path(destLoc)
         robot.turn(direction)
         robot.move(direction)
+
+def face_owner(robot):
+    face_location(robot, robot.get_owner_location())
 
 def face_location(robot, destLoc):
     direction = robot.find_path(destLoc)

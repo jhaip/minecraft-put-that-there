@@ -1,5 +1,5 @@
 from botchallenge import *
-from pathfindingUtils import go_to_owner
+from pathfindingUtils import go_to_owner, face_owner
 import sys
 
 def give_block(robot, TARGET_LIST):
@@ -9,6 +9,7 @@ def give_block(robot, TARGET_LIST):
     ownerLoc = robot.get_owner_location()
     initialDist = int(robot.get_location().distance(ownerLoc))
     if initialDist < 5:
+        face_owner(robot)
         here = True
     
     inventory = tuple_list_to_dict(robot.get_inventory())
