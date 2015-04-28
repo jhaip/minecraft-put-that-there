@@ -182,7 +182,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                     proc = False
             if action is Actions.Give:
                 if obj in objToBlockTypes:
-                    run_new_command(['giveblock.py', #todo
+                    run_new_command(['giveblock.py',
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
             if action is Actions.Go:
