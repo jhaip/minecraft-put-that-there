@@ -11,7 +11,7 @@ import ssl
 
 class Actions:
     [Build, Get, Give, Stop, Come, Go, Hello, What, Where, Why, Flatten,
-     CheckInventory] = range(12)
+     CheckInventory, Craft] = range(13)
 
 class Objects:
     [House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron,
@@ -110,10 +110,12 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = Actions.Build
             elif message_has_substring(message, ["find","search","look for","get","gather","collect","cut","mine","pick","obtain","destroy","dig","chop","bring"]):
                 action = Actions.Get
-            elif message_has_substring(message, ["flat","clear"]):
+            elif message_has_substring(message, ["flat","clear","flatten"]):
                 action = Actions.Flatten
             elif message_has_substring(message, ["give","drop","throw"]):
                 action = Actions.Give
+            elif message_has_substring(message, ["craft"]):
+                action = Actions.Craft
             elif message_has_substring(message, ["go"]): #keep this near end
                 action = Actions.Go
             elif message_has_substring(message, ["come"]):
@@ -149,10 +151,10 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = Objects.Diamond
             elif message_has_substring(message, ["grass","weed"]):
                 obj = Objects.Grass
-            elif message_has_substring(message, ["inventory"]):
-                obj = Objects.Inventory
             elif message_has_substring(message, ["this","that","those","these"]):
                 obj = Objects.That
+            elif message_has_substring(message, ["inventory"]):
+                obj = Objects.Inventory
             elif message_has_substring(message, ["there"]):
                 obj = Objects.There
             elif message_has_substring(message, ["you","Jack"]): #keep this last
@@ -167,14 +169,24 @@ class Hello(tornado.websocket.WebSocketHandler):
                 if obj is Objects.Tunnel:
                     run_new_command(['minetunnel.py', MINECRAFT_USERNAME])
                 else:
-                    robot.message_owner("I don't know how to build that.")
+                    robot.message_owner("I don't know how to build that, but I can help "
+                                        + "you gather materials if you tell me what to find.")
+            if action is Actions.Craft:
+                robot.message_owner("I don't know how to craft things, but I can help "
+                                    + "you gather materials if you tell me what to find.")
             if action is Actions.Get:
                 if obj in objToBlockTypes:
                     run_new_command(['gatherblock.py', 
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
+                if obj is Objects.That:
+                    blockType = Utilities.get_that_block_type(robot)
+                    if blockType is not None:
+                        run_new_command(['gatherblock.py', 
+                                        MINECRAFT_USERNAME, 
+                                        str([blockType])])
                 else:
-                    robot.message_owner("I don't know how to get that.") #todo get that
+                    robot.message_owner("I don't know how to get that.")
             if action is Actions.Stop:
                 if proc is not False:
                     proc.terminate() # if not forceful enough use .kill()
@@ -185,9 +197,17 @@ class Hello(tornado.websocket.WebSocketHandler):
                     run_new_command(['giveblock.py',
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
+                if obj is Objects.That:
+                    blockType = Utilities.get_that_block_type(robot)
+                    if blockType is not None:
+                        run_new_command(['giveblock.py', 
+                                        MINECRAFT_USERNAME, 
+                                        str([blockType])])
             if action is Actions.Go:
                 if obj is Objects.There:
                     run_new_command(['gothere.py', MINECRAFT_USERNAME])
+                else:
+                    robot.message_owner("You can point to a location and tell me to go there.")
             if action is Actions.Come:
                 run_new_command(['comehere.py', MINECRAFT_USERNAME])
             if action is Actions.Hello:
@@ -214,6 +234,8 @@ class Hello(tornado.websocket.WebSocketHandler):
                 if obj is Objects.Jack:
                     dist = round(robot.get_location().distance(robot.get_owner_location()), 2)
                     robot.message_all("I am " + str(dist) + " units away from you.")
+                else:
+                    robot.message_all("I don't know how to tell you where that is.") #todo "follow me"
             if action is Actions.Why:
                 robot.message_all("I don't know why.")
             if action is Actions.CheckInventory:
@@ -221,6 +243,12 @@ class Hello(tornado.websocket.WebSocketHandler):
                     run_new_command(['checkinventory.py', 
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
+                if obj is Objects.That:
+                    blockType = Utilities.get_that_block_type(robot)
+                    if blockType is not None:
+                        run_new_command(['checkinventory.py', 
+                                        MINECRAFT_USERNAME, 
+                                        str([blockType])])
                 else:
                     Utilities.get_inventory(robot)
             if action is Actions.Flatten:
@@ -234,7 +262,10 @@ class Utilities:
         inventoryItems = [str(key).lower() for (key, val) in robot.get_inventory()]
         robot.message_all("In my inventory, I have: "
                           + str(inventoryItems).strip('[').strip(']').replace("'", ""))
-
+    def get_that_block_type(robot):
+        owner_target_block = robot.get_owner_target_block()
+        return robot.get_block_type_at(owner_target_block)
+                    
 class Main(tornado.web.RequestHandler):
     def get(self):
         # This could be a template, too.
