@@ -27,6 +27,7 @@ def gather_block(robot, TARGET_LIST):
         while block_type not in TARGET_LIST:
             robot.move(robot.find_path(location))
             if len(pathfinding_locations) > 3 and pathfinding_locations[-2] == robot.get_location():
+                speak()
                 robot.message_owner("I got stuck so I gave up. :(")
                 return
             pathfinding_locations.append(robot.get_location())
@@ -37,7 +38,7 @@ def gather_block(robot, TARGET_LIST):
         for t in TARGET_LIST:
             locations += robot.find_type_nearby(t)
         locations.sort(key=coordDist)
-
+    speak()
     robot.message_all("I'm done gathering!")
     print("done!")
 

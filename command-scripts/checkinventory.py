@@ -9,9 +9,11 @@ def check_inventory(robot, TARGET_LIST):
         blockStr = str(blockType)
         if blockStr in inventory.keys():
             qty = inventory[blockStr]
+            speak()
             robot.message_all("I have " + str(qty) + " "
                               + blockStr.lower() + " in my inventory.")
         else:
+            speak()
             robot.message_all("I don't have any "
                               + blockStr.lower() + " in my inventory.")
 

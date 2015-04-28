@@ -7,17 +7,20 @@ def go_there(robot):
     thereLoc = robot.get_owner_target_block()
     initialDist = int(robot.get_location().distance(thereLoc))
     if initialDist < teleportThreshold:
+        speak()
         robot.message_owner("I'm going over there.")
         walk_toward_location(robot, thereLoc, 1)
     else:
         destLoc = find_air_near(robot, thereLoc)
         if destLoc == None:
+            speak()
             robot.message_owner("I can't find space to teleport there.")
             return
+        speak()
         robot.message_owner("I'm teleporting over there.")
         robot.teleport(destLoc)
     move_to_ground(robot)
-
+    speak()
     robot.message_owner("I've arrived!")
 
 robot = Robot(str(sys.argv[1]), "localhost")

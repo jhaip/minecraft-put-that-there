@@ -21,9 +21,11 @@ def give_block(robot, TARGET_LIST):
                 go_to_owner(robot, teleportThreshold)
                 here = True
             qty = inventory[blockStr]
+            speak()
             robot.message_all("Here is all of my " + blockStr.lower())
             robot.drop_item(blockType, qty)
         else:
+            speak()
             robot.message_all("I don't have any "
                               + blockStr.lower() + " in my inventory.")
     print("done!")
