@@ -123,7 +123,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = Actions.Come
             elif message_has_substring(message, ["hello","hi","hey","howdy","high"]):
                 action = Actions.Hello
-            elif message_has_substring(message, ["do you have","inventory","how much"]):
+            elif message_has_substring(message, ["do you have","inventory","how much","how many"]):
                 action = Actions.CheckInventory
             else:
                 action = False
@@ -169,7 +169,7 @@ class Hello(tornado.websocket.WebSocketHandler):
             if action is Actions.Build:
                 if obj is Objects.House:
                     run_new_command(['buildhut.py', MINECRAFT_USERNAME])
-                if obj is Objects.Tunnel:
+                elif obj is Objects.Tunnel:
                     run_new_command(['minetunnel.py', MINECRAFT_USERNAME])
                 else:
                     robot.message_owner("I don't know how to build that, but I can help "
@@ -182,7 +182,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                     run_new_command(['gatherblock.py', 
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
-                if obj is Objects.That:
+                elif obj is Objects.That:
                     blockType = Utilities.get_that_block_type(robot)
                     if blockType is not None:
                         run_new_command(['gatherblock.py', 
@@ -196,16 +196,19 @@ class Hello(tornado.websocket.WebSocketHandler):
                     proc.wait()
                     proc = False
             if action is Actions.Give:
+                print("obj is", objToBlockTypes[obj]) #todo remove
                 if obj in objToBlockTypes:
                     run_new_command(['giveblock.py',
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
-                if obj is Objects.That:
+                elif obj is Objects.That:
                     blockType = Utilities.get_that_block_type(robot)
                     if blockType is not None:
                         run_new_command(['giveblock.py', 
                                         MINECRAFT_USERNAME, 
                                         str([blockType])])
+                else:
+                    robot.message_all("I can give you items from my inventory if you tell me what to give you.")
             if action is Actions.Go:
                 if obj is Objects.There:
                     run_new_command(['gothere.py', MINECRAFT_USERNAME])
@@ -218,9 +221,9 @@ class Hello(tornado.websocket.WebSocketHandler):
             if action is Actions.What:
                 if obj is Objects.Inventory:
                     Utilities.get_inventory(robot)
-                if obj is Objects.Jack:
+                elif obj is Objects.Jack:
                     robot.message_all("I do the things you tell me to, such as build a house or find coal.")
-                if obj is Objects.That:
+                elif obj is Objects.That:
                     owner_target_block = robot.get_owner_target_block()
                     owner_target_block_type = robot.get_block_type_at(owner_target_block)
                     if owner_target_block_type is not None:
@@ -246,7 +249,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                     run_new_command(['checkinventory.py', 
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
-                if obj is Objects.That:
+                elif obj is Objects.That:
                     blockType = Utilities.get_that_block_type(robot)
                     if blockType is not None:
                         run_new_command(['checkinventory.py', 
