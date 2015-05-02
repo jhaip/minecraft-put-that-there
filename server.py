@@ -224,6 +224,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                     proc.terminate() # if not forceful enough use .kill()
                     proc.wait()
                     proc = False
+                    robot_state = States.IDLE
             if action is Actions.Give:
                 print("obj is", objToBlockTypes[obj]) #todo remove
                 if obj in objToBlockTypes:
