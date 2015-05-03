@@ -9,12 +9,13 @@ import subprocess
 import signal
 import ssl
 import random
+from enum import Enum
 
-class Actions:
+class Actions(Enum):
     [Build, Get, Give, Stop, Come, Go, Hello, What, Where, Why, Flatten,
-     CheckInventory, Craft] = range(13)
+     CheckInventory, Craft, Place] = range(14)
 
-class Objects:
+class Objects(Enum):
     [House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron,
      Diamond, Grass, Seeds, Inventory, Jack, That, There, Current_Action] = range(17)
 
@@ -48,6 +49,7 @@ class States:
     COME_TO_PLAYER = "going to where you are"
     CHECK_INVENTORY = "checking my inventory"
     MAKE_FLAT = "making this area flat"
+    PLACE = "placing a block"
 
 robot_state = States.IDLE
 
@@ -146,6 +148,8 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = Actions.Come
             elif message_has_substring(message, ["hello","hi","hey","howdy","high"]):
                 action = Actions.Hello
+            elif message_has_substring(message, ["place","put"]):
+                action = Actions.Place
             elif message_has_substring(message, ["do you have","inventory","how much","how many"]):
                 action = Actions.CheckInventory
             else:
@@ -226,7 +230,6 @@ class Hello(tornado.websocket.WebSocketHandler):
                     proc = False
                     robot_state = States.IDLE
             if action is Actions.Give:
-                print("obj is", objToBlockTypes[obj]) #todo remove
                 if obj in objToBlockTypes:
                     robot_state = States.GIVE
                     run_new_command(['giveblock.py',
@@ -237,10 +240,16 @@ class Hello(tornado.websocket.WebSocketHandler):
                     if blockType is not None:
                         robot_state = States.GIVE
                         run_new_command(['giveblock.py', 
-                                        MINECRAFT_USERNAME, 
+                                        MINECRAFT_USERNAME,
                                         str([blockType])])
                 else:
                     robot.message_all("I can give you items from my inventory if you tell me what to give you.")
+            if action is Actions.Place:
+                if obj in objToBlockTypes and obj is not Objects.House:
+                    robot_state = States.PLACE
+                    run_new_command(['placeblock.py',
+                                    MINECRAFT_USERNAME, 
+                                    str(objToBlockTypes[obj]).replace(' ','')])
             if action is Actions.Go:
                 if obj is Objects.There or obj is Objects.That:
                     robot_state = States.GO_THERE
