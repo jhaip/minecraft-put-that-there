@@ -103,11 +103,16 @@ class Hello(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         global proc
         global robot_state
+        final_transcript = False
+        recognized_command = False
         print("Received message: '"+message+"'")
         if message == "C0nfirm3d":
             print("Web page is successfully communicating with the python server! :)")
             return
         if robot_ready:
+            if message[0] == ";":
+                final_transcript = True
+            message = message[1:] # get rid of the first character flag for the message type
             robot.message_all(message)
             if "down" in message:
                 robot.move(Dir.DOWN)
@@ -199,21 +204,26 @@ class Hello(tornado.websocket.WebSocketHandler):
                 if obj is Objects.House:
                     robot_state = States.BUILD_HOUSE
                     run_new_command(['buildhut.py', MINECRAFT_USERNAME])
+                    recognized_command = True
                 elif obj is Objects.Tunnel:
                     robot_state = States.BUILD_TUNNEL
                     run_new_command(['minetunnel.py', MINECRAFT_USERNAME])
-                else:
+                    recognized_command = True
+                elif final_transcript is True:
                     robot.message_owner("I don't know how to build that, but I can help "
                                         + "you gather materials if you tell me what to find.")
+                    recognized_command = True
             if action is Actions.Craft:
                 robot.message_owner("I don't know how to craft things, but I can help "
                                     + "you gather materials if you tell me what to find.")
+                recognized_command = True
             if action is Actions.Get:
                 if obj in objToBlockTypes:
                     robot_state = States.GATHER
                     run_new_command(['gatherblock.py', 
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
+                    recognized_command = True
                 elif obj is Objects.That:
                     blockType = Utilities.get_that_block_type(robot)
                     if blockType is not None:
@@ -221,20 +231,24 @@ class Hello(tornado.websocket.WebSocketHandler):
                         run_new_command(['gatherblock.py', 
                                         MINECRAFT_USERNAME, 
                                         str([blockType])])
-                else:
+                        recognized_command = True
+                elif final_transcript is True:
                     robot.message_owner("I don't know how to get that.")
+                    recognized_command = True
             if action is Actions.Stop:
                 if proc is not False:
                     proc.terminate() # if not forceful enough use .kill()
                     proc.wait()
                     proc = False
                     robot_state = States.IDLE
+                recognized_command = True
             if action is Actions.Give:
                 if obj in objToBlockTypes:
                     robot_state = States.GIVE
                     run_new_command(['giveblock.py',
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
+                    recognized_command = True
                 elif obj is Objects.That:
                     blockType = Utilities.get_that_block_type(robot)
                     if blockType is not None:
@@ -242,32 +256,41 @@ class Hello(tornado.websocket.WebSocketHandler):
                         run_new_command(['giveblock.py', 
                                         MINECRAFT_USERNAME,
                                         str([blockType])])
-                else:
+                        recognized_command = True
+                elif final_transcript is True:
                     robot.message_all("I can give you items from my inventory if you tell me what to give you.")
+                    recognized_command = True
             if action is Actions.Place:
                 if obj in objToBlockTypes and obj is not Objects.House:
                     robot_state = States.PLACE
                     run_new_command(['placeblock.py',
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
+                    recognized_command = True
             if action is Actions.Go:
                 if obj is Objects.There or obj is Objects.That:
                     robot_state = States.GO_THERE
                     run_new_command(['gothere.py', MINECRAFT_USERNAME])
-                else:
+                    recognized_command = True
+                elif final_transcript is True:
                     robot.message_owner("You can point to a location and tell me to go there.")
+                    recognized_command = True
             if action is Actions.Come:
                 robot_state = States.COME_TO_PLAYER
                 run_new_command(['comehere.py', MINECRAFT_USERNAME])
+                recognized_command = True
             if action is Actions.Hello:
                 speak()
                 robot.message_all("Hello, I'm Jack!  Let's play Minecraft together!")
+                recognized_command = True
             if action is Actions.What:
                 if obj is Objects.Inventory:
                     Utilities.get_inventory(robot)
+                    recognized_command = True
                 elif obj is Objects.Jack:
                     speak()
                     robot.message_all("I do the things you tell me to, such as build a house or find coal.")
+                    recognized_command = True
                 elif obj is Objects.That:
                     owner_target_block = robot.get_owner_target_block()
                     owner_target_block_type = robot.get_block_type_at(owner_target_block)
@@ -282,24 +305,30 @@ class Hello(tornado.websocket.WebSocketHandler):
                                 owner_target_block_type_str = "my cousin"
                         speak()
                         robot.message_owner("That is "+owner_target_block_type_str)
+                    recognized_command = True
                 elif obj is Objects.Current_Action:
                     robot.message_owner("I am "+robot_state)
+                    recognized_command = True
             if action is Actions.Where:
                 if obj is Objects.Jack:
                     dist = round(robot.get_location().distance(robot.get_owner_location()), 2)
                     speak()
                     robot.message_all("I am " + str(dist) + " units away from you.")
-                else:
+                    recognized_command = True
+                elif final_transcript is True:
                     robot.message_all("I don't know how to tell you where that is.") #todo "follow me"
+                    recognized_command = True
             if action is Actions.Why:
                 speak()
                 robot.message_all("I don't know why.")
+                recognized_command = True
             if action is Actions.CheckInventory:
                 if obj in objToBlockTypes:
                     robot_state = States.CHECK_INVENTORY
                     run_new_command(['checkinventory.py', 
                                     MINECRAFT_USERNAME, 
                                     str(objToBlockTypes[obj]).replace(' ','')])
+                    recognized_command = True
                 elif obj is Objects.That:
                     blockType = Utilities.get_that_block_type(robot)
                     if blockType is not None:
@@ -307,11 +336,19 @@ class Hello(tornado.websocket.WebSocketHandler):
                         run_new_command(['checkinventory.py', 
                                         MINECRAFT_USERNAME, 
                                         str([blockType])])
-                else:
+                        recognized_command = True
+                elif final_transcript is True:
                     Utilities.get_inventory(robot)
+                    recognized_command = True
             if action is Actions.Flatten:
                 robot_state = States.MAKE_FLAT
                 run_new_command(['flatten.py', MINECRAFT_USERNAME])
+                recognized_command = True
+
+        if recognized_command:
+            if final_transcript is False:
+                # send command back to web page to end the transcript
+                self.write_message(u"end transcript")
 
     def on_close(self):
         print("CLOSING SERVER")

@@ -230,9 +230,15 @@ var start_timestamp;
 ws = new WebSocket("ws://localhost:8888/websocket");
 ws.onmessage = function(e) {
     console.log('message received: ' + e.data);
-    var msg = { event: 'register', };
-    ws.send( "C0nfirm3d" );
-    console.log("ws_send sent");
+    if (e.data == "end transcript") {
+      console.log("restarting transcript");
+      recognition.stop();
+      recognition.start();
+    } else {
+      var msg = { event: 'register', };
+      ws.send( "C0nfirm3d" );
+      console.log("ws_send sent");
+    }
 };
 
 if (!('webkitSpeechRecognition' in window)) {
@@ -306,9 +312,10 @@ if (!('webkitSpeechRecognition' in window)) {
       if (event.results[i].isFinal) {
         final_transcript += event.results[i][0].transcript;
         console.log(event.results[i][0].transcript);
-        ws.send( event.results[i][0].transcript );
+        ws.send( ";"+event.results[i][0].transcript );
       } else {
         interim_transcript += event.results[i][0].transcript;
+        ws.send( ":"+event.results[i][0].transcript )
       }
     }
     final_transcript = capitalize(final_transcript);
