@@ -226,14 +226,18 @@ var final_transcript = '';
 var recognizing = false;
 var ignore_onend;
 var start_timestamp;
+var recognition;
 
 ws = new WebSocket("ws://localhost:8888/websocket");
 ws.onmessage = function(e) {
     console.log('message received: ' + e.data);
     if (e.data == "end transcript") {
       console.log("restarting transcript");
-      recognition.stop();
-      recognition.start();
+      recognition.abort();
+      final_span.innerHTML = "";
+      interim_span.innerHTML = "";
+      //recognition.start();
+      ws.send("R3SETTING");
     } else {
       var msg = { event: 'register', };
       ws.send( "C0nfirm3d" );
@@ -245,7 +249,7 @@ if (!('webkitSpeechRecognition' in window)) {
   upgrade();
 } else {
   start_button.style.display = 'inline-block';
-  var recognition = new webkitSpeechRecognition();
+  recognition = new webkitSpeechRecognition();
   recognition.continuous = true;
   recognition.interimResults = true;
 
@@ -253,6 +257,7 @@ if (!('webkitSpeechRecognition' in window)) {
     recognizing = true;
     showInfo('info_speak_now');
     start_img.src = 'static/mic-animate.gif';
+    ws.send("FRESH START");
   };
 
   recognition.onerror = function(event) {
@@ -300,10 +305,10 @@ if (!('webkitSpeechRecognition' in window)) {
       createEmail();
     }
     */
-    setTimeout(function() {
+    //setTimeout(function() {
       recognition.start();
       console.log("recognizing speech again");
-    }, 500);
+    //}, 500);
   };
 
   recognition.onresult = function(event) {

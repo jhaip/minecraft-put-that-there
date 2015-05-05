@@ -39,6 +39,8 @@ robot_ready = False
 
 proc = False
 
+waiting_to_reset = False
+
 class States:
     IDLE = "doing nothing"
     BUILD_HOUSE = "building a house"
@@ -103,17 +105,26 @@ class Hello(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         global proc
         global robot_state
+        global waiting_to_reset
         final_transcript = False
         recognized_command = False
         print("Received message: '"+message+"'")
         if message == "C0nfirm3d":
             print("Web page is successfully communicating with the python server! :)")
             return
-        if robot_ready:
+        if message == "R3SETTING":
+            print("Speech Recongition confirmed it's starting to reset.")
+            return
+        if message == "FRESH START":
+            print("Speech Recognition is live again.")
+            waiting_to_reset = False
+            return
+        if robot_ready and waiting_to_reset == False:
             if message[0] == ";":
                 final_transcript = True
-            message = message[1:] # get rid of the first character flag for the message type
-            robot.message_all(message)
+            # message = message[1:] # get rid of the first character flag for the message type
+            message = message.replace(";","!!! ")
+            # robot.message_all(message)
             if "down" in message:
                 robot.move(Dir.DOWN)
             if "up" in message:
@@ -349,6 +360,8 @@ class Hello(tornado.websocket.WebSocketHandler):
             if final_transcript is False:
                 # send command back to web page to end the transcript
                 self.write_message(u"end transcript")
+                print("------ sending message to end transcript")
+                waiting_to_reset = True
 
     def on_close(self):
         print("CLOSING SERVER")
