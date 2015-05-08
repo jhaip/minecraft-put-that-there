@@ -11,13 +11,22 @@ import ssl
 import random
 from enum import Enum
 
+class Questions(Enum):
+    [Hello, How, WhatCan, What, Why, Where] = range(6)
+
 class Actions(Enum):
-    [Build, Get, Give, Stop, Come, Go, Hello, What, Where, Why, Flatten,
-     CheckInventory, Craft, Place] = range(14)
+    [Build, Get, Give, Stop, Come, Go, Flatten, Craft, Place, CheckInventory] = range(10)
+
+actionToString = {Actions.Build: "build", Actions.Get: "gather",
+                  Actions.Give: "give", Actions.Stop: "stop",
+                  Actions.Come: "come", Actions.Go: "go",
+                  Actions.Flatten: "flatten", Actions.Craft: "craft",
+                  Actions.Place: "place",
+                  Actions.CheckInventory: "check my inventory for"}
 
 class Objects(Enum):
-    [House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron,
-     Diamond, Grass, Seeds, Inventory, Jack, That, There, Current_Action] = range(17)
+    [House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron, Diamond,
+     Grass, Seeds, Jack, That, There, Current_Action] = range(16)
 
 objToBlockTypes = {Objects.Tree: [BlockType.LOG, BlockType.LOG_2],
                    Objects.Coal: [BlockType.COAL_BLOCK, BlockType.COAL_ORE, BlockType.COAL],
@@ -31,6 +40,7 @@ objToBlockTypes = {Objects.Tree: [BlockType.LOG, BlockType.LOG_2],
                    Objects.Grass: [BlockType.LONG_GRASS],
                    Objects.Seeds: [BlockType.SEEDS]}
 
+question = False
 action = False
 obj = False
 
@@ -92,6 +102,10 @@ def speak():
     audio_file = "sounds/voice-short-"+str(num)+".wav"
     return_code = subprocess.call(["afplay", audio_file])
 
+def message_all(robot, text):
+    speak()
+    robot.message_all(text)
+
 
 class Hello(tornado.websocket.WebSocketHandler):
     def check_origin(self, origin):
@@ -135,19 +149,30 @@ class Hello(tornado.websocket.WebSocketHandler):
                 robot.move(Dir.RIGHT)
             if "forward" in message:
                 robot.move(Dir.FORWARD)
-            if "backward" in message or "back" in message:
+            if "backward" in message:
                 robot.move(Dir.BACKWARD)
                 
+            # Detecting Question
+            question = False
+            if message_has_substring(message, ["hello","hi","hey","howdy","high"]):
+                question = Questions.Hello
+            elif message_has_substring(message, ["how"]):
+                question = Questions.How
+            elif message_has_substring(message, ["what can"]):
+                question = Questions.WhatCan
+            elif message_has_substring(message, ["what","who"]):
+                question = Questions.What
+            elif message_has_substring(message, ["why"]):
+                question = Questions.Why
+            elif message_has_substring(message, ["where"]):
+                question = Questions.Where
+            else:
+                question = False
+            
             # Detecting Action
             action = False
             if message_has_substring(message, ["stop","quit"]):
                 action = Actions.Stop
-            elif message_has_substring(message, ["where"]):
-                action = Actions.Where
-            elif message_has_substring(message, ["what"]):
-                action = Actions.What
-            elif message_has_substring(message, ["why"]):
-                action = Actions.Why
             elif message_has_substring(message, ["build","make"]):
                 action = Actions.Build
             elif message_has_substring(message, ["find","search","look for","get","gather","collect","cut","mine","pick","obtain","destroy","dig","chop","bring"]):
@@ -158,12 +183,10 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = Actions.Give
             elif message_has_substring(message, ["craft"]):
                 action = Actions.Craft
-            elif message_has_substring(message, ["go"]): #keep this near end
-                action = Actions.Go
             elif message_has_substring(message, ["come"]):
                 action = Actions.Come
-            elif message_has_substring(message, ["hello","hi","hey","howdy","high"]):
-                action = Actions.Hello
+            elif message_has_substring(message, ["go"]): #keep this near end
+                action = Actions.Go
             elif message_has_substring(message, ["place","put"]):
                 action = Actions.Place
             elif message_has_substring(message, ["do you have","inventory","how much","how many"]):
@@ -177,7 +200,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = Objects.House
             elif message_has_substring(message, ["tunnel","cave"]):
                 obj = Objects.Tunnel
-            elif message_has_substring(message, ["tree","wood","log"]):
+            elif message_has_substring(message, ["tree","wood","log","Wood"]):
                 obj = Objects.Tree
             elif message_has_substring(message, ["coal","goal","cool","cold","Cole","Coke","call"]):
                 obj = Objects.Coal
@@ -193,114 +216,52 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = Objects.Iron
             elif message_has_substring(message, ["diamond"]):
                 obj = Objects.Diamond
-            elif message_has_substring(message, ["grass","weed","longgrass","long grass"]):
+            elif message_has_substring(message, ["grass","weed"]):
                 obj = Objects.Grass
-            elif message_has_substring(message, ["seeds","seed"]):
+            elif message_has_substring(message, ["seed"]):
                 obj = Objects.Seeds
             elif message_has_substring(message, ["this","that","those","these"]):
                 obj = Objects.That
-            elif message_has_substring(message, ["inventory"]):
-                obj = Objects.Inventory
-            elif message_has_substring(message, ["there"]):
+            elif message_has_substring(message, ["there","they're","their"]):
                 obj = Objects.There
-            elif message_has_substring(message, ["you doing"]):
+            elif message_has_substring(message, ["you doing","Jack doing"]):
                 obj = Objects.Current_Action
-            elif message_has_substring(message, ["you","Jack"]): #keep this last
+            elif message_has_substring(message, ["you","Jack","jack"]): #keep this last
                 obj = Objects.Jack
             else:
                 obj = False
 
-            # Making Jack do thing based on an action, obj combo
-            if action is Actions.Build:
-                if obj is Objects.House:
-                    robot_state = States.BUILD_HOUSE
-                    run_new_command(['buildhut.py', MINECRAFT_USERNAME])
-                    recognized_command = True
-                elif obj is Objects.Tunnel:
-                    robot_state = States.BUILD_TUNNEL
-                    run_new_command(['minetunnel.py', MINECRAFT_USERNAME])
-                    recognized_command = True
-                elif final_transcript is True:
-                    robot.message_owner("I don't know how to build that, but I can help "
-                                        + "you gather materials if you tell me what to find.")
-                    recognized_command = True
-            if action is Actions.Craft:
-                robot.message_owner("I don't know how to craft things, but I can help "
-                                    + "you gather materials if you tell me what to find.")
+            # Before doing an action, check whether command is a question
+            if question is Questions.Hello:
+                message_all(robot, "Hello, I'm Jack!  Let's play Minecraft together!")
                 recognized_command = True
-            if action is Actions.Get:
-                if obj in objToBlockTypes:
-                    robot_state = States.GATHER
-                    run_new_command(['gatherblock.py', 
-                                    MINECRAFT_USERNAME, 
-                                    str(objToBlockTypes[obj]).replace(' ','')])
-                    recognized_command = True
-                elif obj is Objects.That:
-                    blockType = Utilities.get_that_block_type(robot)
-                    if blockType is not None:
-                        robot_state = States.GATHER
-                        run_new_command(['gatherblock.py', 
+            elif question is Questions.How:
+                if action is Actions.CheckInventory:
+                    if obj in objToBlockTypes:
+                        robot_state = States.CHECK_INVENTORY
+                        run_new_command(['checkinventory.py', 
                                         MINECRAFT_USERNAME, 
-                                        str([blockType])])
+                                        str(objToBlockTypes[obj]).replace(' ','')])
                         recognized_command = True
-                elif final_transcript is True:
-                    robot.message_owner("I don't know how to get that.")
-                    recognized_command = True
-            if action is Actions.Stop:
-                if proc is not False:
-                    proc.terminate() # if not forceful enough use .kill()
-                    proc.wait()
-                    proc = False
-                    robot_state = States.IDLE
-                recognized_command = True
-            if action is Actions.Give:
-                if obj in objToBlockTypes:
-                    robot_state = States.GIVE
-                    run_new_command(['giveblock.py',
-                                    MINECRAFT_USERNAME, 
-                                    str(objToBlockTypes[obj]).replace(' ','')])
-                    recognized_command = True
-                elif obj is Objects.That:
-                    blockType = Utilities.get_that_block_type(robot)
-                    if blockType is not None:
-                        robot_state = States.GIVE
-                        run_new_command(['giveblock.py', 
-                                        MINECRAFT_USERNAME,
-                                        str([blockType])])
+                    elif obj is Objects.That:
+                        blockType = Utilities.get_that_block_type(robot)
+                        if blockType is not None:
+                            robot_state = States.CHECK_INVENTORY
+                            run_new_command(['checkinventory.py', 
+                                            MINECRAFT_USERNAME, 
+                                            str([blockType])])
+                            recognized_command = True
+                    elif final_transcript is True:
+                        Utilities.get_inventory(robot)
                         recognized_command = True
-                elif final_transcript is True:
-                    robot.message_all("I can give you items from my inventory if you tell me what to give you.")
+                elif action is not False:
+                    action_phrase = actionToString[action]
+                    message_all(robot, "I can't explain how to " + action_phrase
+                                + ", but I might be able to do it for you.")
                     recognized_command = True
-            if action is Actions.Place:
-                if obj in objToBlockTypes and obj is not Objects.House:
-                    robot_state = States.PLACE
-                    run_new_command(['placeblock.py',
-                                    MINECRAFT_USERNAME, 
-                                    str(objToBlockTypes[obj]).replace(' ','')])
-                    recognized_command = True
-            if action is Actions.Go:
-                if obj is Objects.There or obj is Objects.That:
-                    robot_state = States.GO_THERE
-                    run_new_command(['gothere.py', MINECRAFT_USERNAME])
-                    recognized_command = True
-                elif final_transcript is True:
-                    robot.message_owner("You can point to a location and tell me to go there.")
-                    recognized_command = True
-            if action is Actions.Come:
-                robot_state = States.COME_TO_PLAYER
-                run_new_command(['comehere.py', MINECRAFT_USERNAME])
-                recognized_command = True
-            if action is Actions.Hello:
-                speak()
-                robot.message_all("Hello, I'm Jack!  Let's play Minecraft together!")
-                recognized_command = True
-            if action is Actions.What:
-                if obj is Objects.Inventory:
+            elif question is Questions.What:
+                if action is Actions.CheckInventory:
                     Utilities.get_inventory(robot)
-                    recognized_command = True
-                elif obj is Objects.Jack:
-                    speak()
-                    robot.message_all("I do the things you tell me to, such as build a house or find coal.")
                     recognized_command = True
                 elif obj is Objects.That:
                     owner_target_block = robot.get_owner_target_block()
@@ -314,47 +275,117 @@ class Hello(tornado.websocket.WebSocketHandler):
                                 owner_target_block_type_str = "me"
                             else:
                                 owner_target_block_type_str = "my cousin"
-                        speak()
-                        robot.message_owner("That is "+owner_target_block_type_str)
+                        message_all(robot, "That is "+owner_target_block_type_str)
                     recognized_command = True
                 elif obj is Objects.Current_Action:
-                    robot.message_owner("I am "+robot_state)
+                    message_all(robot, "I am "+robot_state)
                     recognized_command = True
-            if action is Actions.Where:
+            elif question is Questions.WhatCan:
+                if obj is Objects.Jack:
+                    message_all(robot, "I do the things you tell me to, such as build a house or find coal.")
+                    recognized_command = True
+            elif question is Questions.Why:
+                message_all(robot, "I don't know why.")
+                recognized_command = True
+            elif question is Questions.Where:
                 if obj is Objects.Jack:
                     dist = round(robot.get_location().distance(robot.get_owner_location()), 2)
-                    speak()
-                    robot.message_all("I am " + str(dist) + " units away from you.")
+                    message_all(robot, "I am " + str(dist) + " units away from you.")
                     recognized_command = True
                 elif final_transcript is True:
-                    robot.message_all("I don't know how to tell you where that is.") #todo "follow me"
+                    message_all(robot, "I don't know how to tell you where that is.")
                     recognized_command = True
-            if action is Actions.Why:
-                speak()
-                robot.message_all("I don't know why.")
-                recognized_command = True
-            if action is Actions.CheckInventory:
-                if obj in objToBlockTypes:
-                    robot_state = States.CHECK_INVENTORY
-                    run_new_command(['checkinventory.py', 
-                                    MINECRAFT_USERNAME, 
-                                    str(objToBlockTypes[obj]).replace(' ','')])
-                    recognized_command = True
-                elif obj is Objects.That:
-                    blockType = Utilities.get_that_block_type(robot)
-                    if blockType is not None:
-                        robot_state = States.CHECK_INVENTORY
-                        run_new_command(['checkinventory.py', 
-                                        MINECRAFT_USERNAME, 
-                                        str([blockType])])
+                    
+
+            # Making Jack do thing based on an action, obj combo
+            if question is False:
+                if action is Actions.Build:
+                    if obj is Objects.House:
+                        robot_state = States.BUILD_HOUSE
+                        run_new_command(['buildhut.py', MINECRAFT_USERNAME])
                         recognized_command = True
-                elif final_transcript is True:
-                    Utilities.get_inventory(robot)
+                    elif obj is Objects.Tunnel:
+                        robot_state = States.BUILD_TUNNEL
+                        run_new_command(['minetunnel.py', MINECRAFT_USERNAME])
+                        recognized_command = True
+                    elif final_transcript is True:
+                        message_all(robot, "I don't know how to build that, but I can help "
+                                + "you gather materials if you tell me what to find.")
+                        recognized_command = True
+                if action is Actions.Craft:
+                    message_all(robot, "I don't know how to craft things, but I can help "
+                            + "you gather materials if you tell me what to find.")
                     recognized_command = True
-            if action is Actions.Flatten:
-                robot_state = States.MAKE_FLAT
-                run_new_command(['flatten.py', MINECRAFT_USERNAME])
-                recognized_command = True
+                if action is Actions.Get:
+                    if obj is Objects.Tunnel: #hack to recognize "dig a tunnel"
+                        robot_state = States.BUILD_TUNNEL
+                        run_new_command(['minetunnel.py', MINECRAFT_USERNAME])
+                        recognized_command = True
+                    elif obj in objToBlockTypes:
+                        robot_state = States.GATHER
+                        run_new_command(['gatherblock.py', 
+                                        MINECRAFT_USERNAME, 
+                                        str(objToBlockTypes[obj]).replace(' ','')])
+                        recognized_command = True
+                    elif obj is Objects.That:
+                        blockType = Utilities.get_that_block_type(robot)
+                        if blockType is not None:
+                            robot_state = States.GATHER
+                            run_new_command(['gatherblock.py', 
+                                            MINECRAFT_USERNAME, 
+                                            str([blockType])])
+                            recognized_command = True
+                    elif final_transcript is True:
+                        message_all(robot, "I don't know how to get that.")
+                        recognized_command = True
+                if action is Actions.Stop:
+                    if proc is not False:
+                        proc.terminate() # if not forceful enough use .kill()
+                        proc.wait()
+                        proc = False
+                        robot_state = States.IDLE
+                    recognized_command = True
+                if action is Actions.Give:
+                    if obj in objToBlockTypes:
+                        robot_state = States.GIVE
+                        run_new_command(['giveblock.py',
+                                        MINECRAFT_USERNAME, 
+                                        str(objToBlockTypes[obj]).replace(' ','')])
+                        recognized_command = True
+                    elif obj is Objects.That:
+                        blockType = Utilities.get_that_block_type(robot)
+                        if blockType is not None:
+                            robot_state = States.GIVE
+                            run_new_command(['giveblock.py', 
+                                            MINECRAFT_USERNAME,
+                                            str([blockType])])
+                            recognized_command = True
+                    elif final_transcript is True:
+                        message_all(robot, "I can give you items from my inventory if you tell me what to give you.")
+                        recognized_command = True
+                if action is Actions.Place:
+                    if obj in objToBlockTypes and obj is not Objects.House:
+                        robot_state = States.PLACE
+                        run_new_command(['placeblock.py',
+                                        MINECRAFT_USERNAME, 
+                                        str(objToBlockTypes[obj]).replace(' ','')])
+                        recognized_command = True
+                if action is Actions.Go:
+                    if obj is Objects.There or obj is Objects.That:
+                        robot_state = States.GO_THERE
+                        run_new_command(['gothere.py', MINECRAFT_USERNAME])
+                        recognized_command = True
+                    elif final_transcript is True:
+                        message_all(robot, "You can point to a location and tell me to go there.")
+                        recognized_command = True
+                if action is Actions.Come:
+                    robot_state = States.COME_TO_PLAYER
+                    run_new_command(['comehere.py', MINECRAFT_USERNAME])
+                    recognized_command = True
+                if action is Actions.Flatten:
+                    robot_state = States.MAKE_FLAT
+                    run_new_command(['flatten.py', MINECRAFT_USERNAME])
+                    recognized_command = True
 
         if recognized_command:
             if final_transcript is False:
@@ -369,9 +400,8 @@ class Hello(tornado.websocket.WebSocketHandler):
 class Utilities:
     def get_inventory(robot):
         inventoryItems = [str(key).lower() for (key, val) in robot.get_inventory()]
-        speak()
-        robot.message_all("In my inventory, I have: "
-                          + str(inventoryItems).strip('[').strip(']').replace("'", ""))
+        message_all(robot, "In my inventory, I have: "
+                + str(inventoryItems).strip('[').strip(']').replace("'", ""))
     def get_that_block_type(robot):
         owner_target_block = robot.get_owner_target_block()
         return robot.get_block_type_at(owner_target_block)
