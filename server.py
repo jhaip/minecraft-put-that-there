@@ -10,23 +10,25 @@ import signal
 import ssl
 import random
 from enum import Enum
+from random import randint
 
 class Questions(Enum):
-    [Hello, How, WhatCan, What, Why, Where] = range(6)
+    [Hello, How, WhatCan, WhatCant, WhatShould, What, Why, Where] = range(8)
 
 class Actions(Enum):
-    [Build, Get, Give, Stop, Come, Go, Flatten, Craft, Place, CheckInventory] = range(10)
+    [Build, Get, Give, Stop, Come, Go, Flatten, Craft, Place, CheckInventory, Do, Dance] = range(12)
 
 actionToString = {Actions.Build: "build", Actions.Get: "gather",
                   Actions.Give: "give", Actions.Stop: "stop",
                   Actions.Come: "come", Actions.Go: "go",
                   Actions.Flatten: "flatten", Actions.Craft: "craft",
                   Actions.Place: "place",
-                  Actions.CheckInventory: "check my inventory for"}
+                  Actions.CheckInventory: "check my inventory for",
+                  Actions.Do: "'do'", Actions.Dance: "dance"}
 
 class Objects(Enum):
     [House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron, Diamond,
-     Grass, Seeds, Jack, That, There, Current_Action] = range(16)
+     Grass, Seeds, Jack, That, There, Current_Action, Your_Name, Thing] = range(18)
 
 objToBlockTypes = {Objects.Tree: [BlockType.LOG, BlockType.LOG_2],
                    Objects.Coal: [BlockType.COAL_BLOCK, BlockType.COAL_ORE, BlockType.COAL],
@@ -62,6 +64,8 @@ class States:
     CHECK_INVENTORY = "checking my inventory"
     MAKE_FLAT = "making this area flat"
     PLACE = "placing a block"
+    DO_SOMETHING = "doing something"
+    DANCE = "dancing"
 
 robot_state = States.IDLE
 
@@ -154,18 +158,24 @@ class Hello(tornado.websocket.WebSocketHandler):
                 
             # Detecting Question
             question = False
-            if message_has_substring(message, ["hello","hi","hey","howdy","high"]):
+            if message_has_substring(message, ["hello","howdy","high"]):
                 question = Questions.Hello
             elif message_has_substring(message, ["how"]):
                 question = Questions.How
             elif message_has_substring(message, ["what can"]):
                 question = Questions.WhatCan
+            elif message_has_substring(message, ["what can't","not able","can't you"]):
+                question = Questions.WhatCant
+            elif message_has_substring(message, ["what should"]):
+                question = Questions.WhatShould
             elif message_has_substring(message, ["what","who"]):
                 question = Questions.What
             elif message_has_substring(message, ["why"]):
                 question = Questions.Why
             elif message_has_substring(message, ["where"]):
                 question = Questions.Where
+            elif message_has_substring(message, ["hi"]) and len(message) == 2:
+                question = Questions.Hello
             else:
                 question = False
             
@@ -185,12 +195,16 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = Actions.Craft
             elif message_has_substring(message, ["come"]):
                 action = Actions.Come
+            elif message_has_substring(message, ["dance"]):
+                action = Actions.Dance
             elif message_has_substring(message, ["go"]): #keep this near end
                 action = Actions.Go
             elif message_has_substring(message, ["place","put"]):
                 action = Actions.Place
             elif message_has_substring(message, ["do you have","inventory","how much","how many"]):
                 action = Actions.CheckInventory
+            elif message_has_substring(message, ["do"]): #keep at end to avoid substring matching
+                action = Actions.Do
             else:
                 action = False
 
@@ -224,10 +238,14 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = Objects.That
             elif message_has_substring(message, ["there","they're","their"]):
                 obj = Objects.There
+            elif message_has_substring(message, ["your name"]):
+                obj = Objects.Your_Name
             elif message_has_substring(message, ["you doing","Jack doing"]):
                 obj = Objects.Current_Action
             elif message_has_substring(message, ["you","Jack","jack"]): #keep this last
                 obj = Objects.Jack
+            elif message_has_substring(message, ["thing","something","it"]):
+                obj = Objects.Thing
             else:
                 obj = False
 
@@ -280,17 +298,43 @@ class Hello(tornado.websocket.WebSocketHandler):
                 elif obj is Objects.Current_Action:
                     message_all(robot, "I am "+robot_state)
                     recognized_command = True
-            elif question is Questions.WhatCan:
-                if obj is Objects.Jack:
-                    message_all(robot, "I do the things you tell me to, such as build a house or find coal.")
+                elif obj is Objects.Your_Name:
+                    message_all(robot, "My name is Jack.")
                     recognized_command = True
+            elif question is Questions.WhatCan:
+                # if obj is Objects.Jack:
+                message_all(robot, "I can move around and place and mine blocks.")
+                message_all(robot, "I can tell what you are looking at.")
+                message_all(robot, "I know how to find and build common Minecraft things.")
+                message_all(robot, "I try to understand what you say so we can get along and have fun together! :)")
+                recognized_command = True
+            elif question is Questions.WhatCant:
+                # if obj is Objects.Jack:
+                message_all(robot, "I don't mess with living things... I'm a pumpkin.")
+                message_all(robot, "I can't craft things and I always carry a diamond pickaxe.")
+                message_all(robot, "And I'm still learning English so speak clearly and simply please. :)")
+                recognized_command = True
+            elif question is Questions.WhatShould:
+                random_value = randint(0,4)
+                if random_value == 0:
+                    message_all(robot, "How about finding some coal?")
+                elif random_value == 1:
+                    message_all(robot, "Build a house.")
+                elif random_value == 2:
+                    message_all(robot, "Let's find some diamond.")
+                elif random_value == 3:
+                    message_all(robot, "We need more iron. You can never have enough iron.")
+                elif random_value == 4:
+                    message_all(robot, "Let's destroy a mountain.")
+                recognized_command = True
             elif question is Questions.Why:
                 message_all(robot, "I don't know why.")
                 recognized_command = True
             elif question is Questions.Where:
                 if obj is Objects.Jack:
                     dist = round(robot.get_location().distance(robot.get_owner_location()), 2)
-                    message_all(robot, "I am " + str(dist) + " units away from you.")
+                    direction = str(robot.get_location().direction(robot.get_owner_location()))
+                    message_all(robot, "I am " + str(dist) + " units away from you "+direction+".")
                     recognized_command = True
                 elif final_transcript is True:
                     message_all(robot, "I don't know how to tell you where that is.")
@@ -385,6 +429,15 @@ class Hello(tornado.websocket.WebSocketHandler):
                 if action is Actions.Flatten:
                     robot_state = States.MAKE_FLAT
                     run_new_command(['flatten.py', MINECRAFT_USERNAME])
+                    recognized_command = True
+                if action is Actions.Do:
+                    if obj is Objects.Thing:
+                        robot_state = States.DO_SOMETHING
+                        run_new_command(['dosomething.py', MINECRAFT_USERNAME])
+                        recognized_command = True
+                if action is Actions.Dance:
+                    robot_state = States.DANCE
+                    run_new_command(['dance.py', MINECRAFT_USERNAME])
                     recognized_command = True
 
         if recognized_command:
