@@ -15,13 +15,14 @@ class Questions(Enum):
     [Hello, How, WhatCan, What, Why, Where] = range(6)
 
 class Actions(Enum):
-    [Build, Get, Give, Stop, Come, Go, Flatten, Craft, Place, CheckInventory] = range(10)
+    [Build, Get, Give, Stop, Come, Go, Follow, Flatten, Craft, Place,
+     CheckInventory] = range(11)
 
 actionToString = {Actions.Build: "build", Actions.Get: "gather",
                   Actions.Give: "give", Actions.Stop: "stop",
                   Actions.Come: "come", Actions.Go: "go",
-                  Actions.Flatten: "flatten", Actions.Craft: "craft",
-                  Actions.Place: "place",
+                  Actions.Follow: "follow", Actions.Flatten: "flatten",
+                  Actions.Craft: "craft", Actions.Place: "place",
                   Actions.CheckInventory: "check my inventory for"}
 
 class Objects(Enum):
@@ -48,11 +49,13 @@ robot = None
 robot_ready = False
 
 proc = False
+should_follow = True
 
 waiting_to_reset = False
 
 class States:
     IDLE = "doing nothing"
+    FOLLOWING = "following you"
     BUILD_HOUSE = "building a house"
     BUILD_TUNNEL = "mining a tunnel"
     GATHER = "gathering"
@@ -119,6 +122,7 @@ class Hello(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         global proc
         global robot_state
+        global should_follow
         global waiting_to_reset
         final_transcript = False
         recognized_command = False
@@ -171,12 +175,14 @@ class Hello(tornado.websocket.WebSocketHandler):
             
             # Detecting Action
             action = False
-            if message_has_substring(message, ["stop","quit"]):
+            if message_has_substring(message, ["stop","quit","no","don't","stay"]):
                 action = Actions.Stop
             elif message_has_substring(message, ["build","make"]):
                 action = Actions.Build
             elif message_has_substring(message, ["find","search","look for","get","gather","collect","cut","mine","pick","obtain","destroy","dig","chop","bring"]):
                 action = Actions.Get
+            elif message_has_substring(message, ["follow"]):
+                action = Actions.Follow
             elif message_has_substring(message, ["flat","clear","flatten"]):
                 action = Actions.Flatten
             elif message_has_substring(message, ["give","drop","throw"]):
@@ -237,23 +243,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                 recognized_command = True
             elif question is Questions.How:
                 if action is Actions.CheckInventory:
-                    if obj in objToBlockTypes:
-                        robot_state = States.CHECK_INVENTORY
-                        run_new_command(['checkinventory.py', 
-                                        MINECRAFT_USERNAME, 
-                                        str(objToBlockTypes[obj]).replace(' ','')])
-                        recognized_command = True
-                    elif obj is Objects.That:
-                        blockType = Utilities.get_that_block_type(robot)
-                        if blockType is not None:
-                            robot_state = States.CHECK_INVENTORY
-                            run_new_command(['checkinventory.py', 
-                                            MINECRAFT_USERNAME, 
-                                            str([blockType])])
-                            recognized_command = True
-                    elif final_transcript is True:
-                        Utilities.get_inventory(robot)
-                        recognized_command = True
+                    question = False
                 elif action is not False:
                     action_phrase = actionToString[action]
                     message_all(robot, "I can't explain how to " + action_phrase
@@ -312,11 +302,11 @@ class Hello(tornado.websocket.WebSocketHandler):
                         message_all(robot, "I don't know how to build that, but I can help "
                                 + "you gather materials if you tell me what to find.")
                         recognized_command = True
-                if action is Actions.Craft:
+                elif action is Actions.Craft:
                     message_all(robot, "I don't know how to craft things, but I can help "
                             + "you gather materials if you tell me what to find.")
                     recognized_command = True
-                if action is Actions.Get:
+                elif action is Actions.Get:
                     if obj is Objects.Tunnel: #hack to recognize "dig a tunnel"
                         robot_state = States.BUILD_TUNNEL
                         run_new_command(['minetunnel.py', MINECRAFT_USERNAME])
@@ -338,14 +328,15 @@ class Hello(tornado.websocket.WebSocketHandler):
                     elif final_transcript is True:
                         message_all(robot, "I don't know how to get that.")
                         recognized_command = True
-                if action is Actions.Stop:
+                elif action is Actions.Stop:
                     if proc is not False:
+                        should_follow = False
                         proc.terminate() # if not forceful enough use .kill()
                         proc.wait()
                         proc = False
                         robot_state = States.IDLE
                     recognized_command = True
-                if action is Actions.Give:
+                elif action is Actions.Give:
                     if obj in objToBlockTypes:
                         robot_state = States.GIVE
                         run_new_command(['giveblock.py',
@@ -363,29 +354,53 @@ class Hello(tornado.websocket.WebSocketHandler):
                     elif final_transcript is True:
                         message_all(robot, "I can give you items from my inventory if you tell me what to give you.")
                         recognized_command = True
-                if action is Actions.Place:
+                elif action is Actions.Place:
                     if obj in objToBlockTypes and obj is not Objects.House:
                         robot_state = States.PLACE
                         run_new_command(['placeblock.py',
                                         MINECRAFT_USERNAME, 
                                         str(objToBlockTypes[obj]).replace(' ','')])
                         recognized_command = True
-                if action is Actions.Go:
+                elif action is Actions.Go:
                     if obj is Objects.There or obj is Objects.That:
+                        should_follow = False
                         robot_state = States.GO_THERE
                         run_new_command(['gothere.py', MINECRAFT_USERNAME])
                         recognized_command = True
                     elif final_transcript is True:
                         message_all(robot, "You can point to a location and tell me to go there.")
                         recognized_command = True
-                if action is Actions.Come:
+                elif action is Actions.Come:
                     robot_state = States.COME_TO_PLAYER
                     run_new_command(['comehere.py', MINECRAFT_USERNAME])
                     recognized_command = True
-                if action is Actions.Flatten:
+                elif action is Actions.Follow:
+                    should_follow = True
+                    robot_state = States.FOLLOWING
+                    run_new_command(['follow.py', MINECRAFT_USERNAME])
+                    recognized_command = True
+                elif action is Actions.Flatten:
                     robot_state = States.MAKE_FLAT
                     run_new_command(['flatten.py', MINECRAFT_USERNAME])
                     recognized_command = True
+                elif action is Actions.CheckInventory:
+                    if obj in objToBlockTypes:
+                        robot_state = States.CHECK_INVENTORY
+                        run_new_command(['checkinventory.py', 
+                                        MINECRAFT_USERNAME, 
+                                        str(objToBlockTypes[obj]).replace(' ','')])
+                        recognized_command = True
+                    elif obj is Objects.That:
+                        blockType = Utilities.get_that_block_type(robot)
+                        if blockType is not None:
+                            robot_state = States.CHECK_INVENTORY
+                            run_new_command(['checkinventory.py', 
+                                            MINECRAFT_USERNAME, 
+                                            str([blockType])])
+                            recognized_command = True
+                    elif final_transcript is True:
+                        Utilities.get_inventory(robot)
+                        recognized_command = True
 
         if recognized_command:
             if final_transcript is False:
@@ -428,13 +443,20 @@ def is_background_process_dead():
     # called once every second
     global proc
     global robot_state
+    global should_follow
     # print("checking to see if background process is dead")
     if proc is not False:
         proc_returncode = proc.poll() # Check if child process has terminated. Set and return returncode attribute.
         if proc_returncode is not None:
             print("background process ended!")
             proc = False
+            if (robot_state is not States.GO_THERE and
+                robot_state is not States.CHECK_INVENTORY):
+                should_follow = True
             robot_state = States.IDLE
+    if robot_state is States.IDLE and should_follow:
+        run_new_command(['follow.py', MINECRAFT_USERNAME])
+        robot_state = States.FOLLOWING
 
 if __name__ == "__main__":
     app = Application()
