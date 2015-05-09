@@ -321,7 +321,7 @@ class Hello(tornado.websocket.WebSocketHandler):
             elif question is Questions.Where:
                 if obj is Objects.Jack:
                     dist = round(robot.get_location().distance(robot.get_owner_location()), 2)
-                    direction = str(robot.get_location().direction(robot.get_owner_location()))
+                    direction = str(robot.get_owner_location().direction(robot.get_location()))
                     message_all(robot, "I am " + str(dist) + " units away from you "+direction+".")
                     recognized_command = True
                 elif final_transcript is True:
