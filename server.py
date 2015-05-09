@@ -15,12 +15,13 @@ class Questions(Enum):
     [Hello, How, WhatCan, What, Why, Where] = range(6)
 
 class Actions(Enum):
-    [Build, Get, Give, Stop, Come, Go, Follow, Flatten, Craft, Place,
-     CheckInventory] = range(11)
+    [Build, Get, Give, Stop, Come, Go, Teleport, Follow, Flatten, Craft,
+     Place, CheckInventory] = range(12)
 
 actionToString = {Actions.Build: "build", Actions.Get: "gather",
                   Actions.Give: "give", Actions.Stop: "stop",
                   Actions.Come: "come", Actions.Go: "go",
+                  Actions.Teleport: "teleport",
                   Actions.Follow: "follow", Actions.Flatten: "flatten",
                   Actions.Craft: "craft", Actions.Place: "place",
                   Actions.CheckInventory: "check my inventory for"}
@@ -100,13 +101,8 @@ def run_new_command(command_line_array):
     command_line_array = ['python3']+command_line_array
     proc = subprocess.Popen(command_line_array)
 
-def speak():
-    num = random.randint(1,3)
-    audio_file = "sounds/voice-short-"+str(num)+".wav"
-    return_code = subprocess.call(["afplay", audio_file])
-
 def message_all(robot, text):
-    speak()
+    Utilities.speak()
     robot.message_all(text)
 
 
@@ -189,6 +185,8 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = Actions.Give
             elif message_has_substring(message, ["craft"]):
                 action = Actions.Craft
+            elif message_has_substring(message, ["teleport"]):
+                action = Actions.Teleport
             elif message_has_substring(message, ["come"]):
                 action = Actions.Come
             elif message_has_substring(message, ["go"]): #keep this near end
@@ -361,11 +359,14 @@ class Hello(tornado.websocket.WebSocketHandler):
                                         MINECRAFT_USERNAME, 
                                         str(objToBlockTypes[obj]).replace(' ','')])
                         recognized_command = True
-                elif action is Actions.Go:
+                elif action is Actions.Go or action is Actions.Teleport:
                     if obj is Objects.There or obj is Objects.That:
                         should_follow = False
                         robot_state = States.GO_THERE
-                        run_new_command(['gothere.py', MINECRAFT_USERNAME])
+                        if action is Actions.Teleport:
+                            run_new_command(['gothere.py', MINECRAFT_USERNAME, '0'])
+                        else:
+                            run_new_command(['gothere.py', MINECRAFT_USERNAME])
                         recognized_command = True
                     elif final_transcript is True:
                         message_all(robot, "You can point to a location and tell me to go there.")
@@ -420,7 +421,10 @@ class Utilities:
     def get_that_block_type(robot):
         owner_target_block = robot.get_owner_target_block()
         return robot.get_block_type_at(owner_target_block)
-
+    def speak():
+        num = random.randint(1,3)
+        audio_file = "sounds/voice-short-"+str(num)+".wav"
+        return_code = subprocess.call(["afplay", audio_file])
                     
 class Main(tornado.web.RequestHandler):
     def get(self):

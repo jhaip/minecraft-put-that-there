@@ -35,8 +35,7 @@ def mine_tunnel(robot):
         robot.move(Dir.DOWN)
         mine_if_solid(robot, Dir.FORWARD)
         robot.move(Dir.FORWARD)
-    speak()
-    robot.message_all("Tunnel complete!")
+    message_all(robot, "Tunnel complete!")
     print("done!")
 
 robot = Robot(str(sys.argv[1]), "localhost")

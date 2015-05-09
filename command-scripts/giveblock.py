@@ -21,13 +21,11 @@ def give_block(robot, TARGET_LIST):
                 go_to_owner(robot, teleportThreshold)
                 here = True
             qty = inventory[blockStr]
-            speak()
-            robot.message_all("Here is all of my " + blockStr.lower())
+            message_all(robot, "Here is all of my " + blockStr.lower())
             robot.drop_item(blockType, qty)
         else:
-            speak()
-            robot.message_all("I don't have any "
-                              + blockStr.lower() + " in my inventory.")
+            message_all(robot, "I don't have any " + blockStr.lower()
+                        + " in my inventory.")
     print("done!")
 
 def tuple_list_to_dict(tupleList): #hash by string
@@ -46,6 +44,4 @@ robot = Robot(str(sys.argv[1]), "localhost")
 give_block(robot, TARGET_LIST_ARG)
 
 sys.exit() # make sure the program dies
-
-
 

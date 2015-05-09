@@ -1,4 +1,5 @@
 from botchallenge import *
+from pathfindingUtils import *
 import sys
 
 def find_block(robot, TARGET_LIST):
@@ -10,9 +11,9 @@ def find_block(robot, TARGET_LIST):
     print(locations)
 
     if len(locations) >= 1:
-        robot.message_all("I found it nearby!")
+        message_all(robot, "I found it nearby!")
     else:
-        robot.message_all("I don't think there is any near here.")
+        message_all(robot, "I don't think there is any near here.")
 
     print("done!")
 

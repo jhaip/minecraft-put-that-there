@@ -15,9 +15,8 @@ def place_block(robot, TARGET_LIST):
             robot.place(Dir.FORWARD, blockType)
             placed_something = True
     if placed_something is False:
-        speak()
-        robot.message_all("I don't have any "
-                          + blockStr.lower() + " in my inventory.")
+        message_all(robot, "I don't have any " + blockStr.lower()
+                    + " in my inventory.")
     print("done!")
 
 def tuple_list_to_dict(tupleList): #hash by string

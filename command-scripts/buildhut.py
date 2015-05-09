@@ -2,8 +2,8 @@
 Builds a simple dirt hut to shelter you from the enemies at night.
 """
 from botchallenge import *
-import sys
 from pathfindingUtils import *
+import sys
 
 hut_layout = """
  xxxxx 
@@ -61,8 +61,7 @@ def build_house(robot):
 
     build_layer(robot, hut_layout_2)
     build_layer(robot, hut_layout_roof)
-    speak()
-    robot.message_all("Our home is ready!")
+    message_all(robot, "Our home is ready!")
     print("done!")
 
 robot = Robot(str(sys.argv[1]), "localhost")

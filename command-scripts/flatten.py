@@ -4,8 +4,8 @@ is facing when it starts.
 """
 
 from botchallenge import *
-import sys
 from pathfindingUtils import *
+import sys
 
 def mine_if_solid(robot, direction):
     """Mines the block only if it's a solid block (won't mine torches away)."""
@@ -39,8 +39,7 @@ def flatten(robot, side_length, height):
         backwards = not backwards
     while robot.get_block_type(Dir.DOWN) == BlockType.AIR:
         robot.move(Dir.DOWN)
-    speak()
-    robot.message_all("All clear!")
+    message_all(robot, "All clear!")
 
 robot = Robot(str(sys.argv[1]), "localhost")
 flatten(robot, 5, 4)

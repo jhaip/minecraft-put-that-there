@@ -2,8 +2,8 @@
 Example robot which finds trees and gathers wood.
 """
 from botchallenge import *
-import sys
 from pathfindingUtils import *
+import sys
 
 def gather_block(robot, TARGET_LIST):
     print("*** STARTING GATHER_BLOCK SCRIPT")
@@ -15,8 +15,7 @@ def gather_block(robot, TARGET_LIST):
     print(locations)
 
     if len(locations) == 0:
-        speak()
-        robot.message_owner("I didn't find any.")
+        message_all(robot, "I didn't find any.")
         return
 
     def coordDist(x):
@@ -33,8 +32,7 @@ def gather_block(robot, TARGET_LIST):
         while block_type not in TARGET_LIST:
             robot.move(robot.find_path(location))
             if len(pathfinding_locations) > 3 and pathfinding_locations[-2] == robot.get_location():
-                speak()
-                robot.message_owner("I got stuck so I gave up. :(")
+                message_all(robot, "I got stuck so I gave up. :(")
                 return
             pathfinding_locations.append(robot.get_location())
             robot.turn(robot.get_location().direction(location))
@@ -44,8 +42,7 @@ def gather_block(robot, TARGET_LIST):
         for t in TARGET_LIST:
             locations += robot.find_type_nearby(t)
         locations.sort(key=coordDist)
-    speak()
-    robot.message_all("I'm done gathering!")
+    message_all(robot, "I'm done gathering!")
     print("done!")
 
 TARGET_LIST_ARG = str(sys.argv[2])

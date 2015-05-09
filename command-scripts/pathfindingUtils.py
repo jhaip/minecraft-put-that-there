@@ -6,23 +6,18 @@ def go_to_owner(robot, teleportThreshold):
     ownerLoc = robot.get_owner_location()
     initialDist = int(robot.get_location().distance(ownerLoc))
     if initialDist < teleportThreshold:
-        speak()
-        robot.message_owner("I'm coming from " + str(initialDist) + " units away.")
+        message_all(robot, "I'm coming from " + str(initialDist) + " units away.")
         walk_toward_location(robot, ownerLoc, 2)
     else:
         maxDestRadius = 3
         destLoc = find_air_near(robot, ownerLoc, maxDestRadius)
         if destLoc == None:
-            speak()
-            robot.message_owner("I can't find space near you to teleport.")
+            message_all(robot, "I can't find space near you to teleport.")
             return
-        speak()
-        robot.message_owner("I'm teleporting from " + str(initialDist) + " units away.")
+        message_all(robot, "I'm teleporting from " + str(initialDist) + " units away.")
         robot.teleport(destLoc)
         face_owner(robot)
-    move_to_ground(robot)
-    speak()
-    robot.message_owner("I'm here!")
+    message_all(robot, "I'm here!")
 
 def walk_toward_location(robot, destLoc, radius):
     while robot.get_location().distance(destLoc) > radius:
@@ -55,3 +50,7 @@ def speak():
     num = random.randint(1,3)
     audio_file = "sounds/voice-short-"+str(num)+".wav"
     return_code = subprocess.call(["afplay", audio_file])
+
+def message_all(robot, text):
+    speak()
+    robot.message_all(text)

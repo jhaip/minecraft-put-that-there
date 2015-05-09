@@ -1,6 +1,6 @@
 from botchallenge import *
-import sys
 from pathfindingUtils import *
+import sys
 
 def check_inventory(robot, TARGET_LIST):
     print("*** STARTING CHECK_INVENTORY SCRIPT")
@@ -10,13 +10,11 @@ def check_inventory(robot, TARGET_LIST):
         blockStr = str(blockType)
         if blockStr in inventory.keys():
             qty = inventory[blockStr]
-            speak()
-            robot.message_all("I have " + str(qty) + " "
-                              + blockStr.lower() + " in my inventory.")
+            message_all(robot, "I have " + str(qty) + " " + blockStr.lower()
+                        + " in my inventory.")
         else:
-            speak()
-            robot.message_all("I don't have any "
-                              + blockStr.lower() + " in my inventory.")
+            message_all(robot, "I don't have any " + blockStr.lower()
+                        + " in my inventory.")
 
     print("done!")
 
