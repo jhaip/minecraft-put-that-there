@@ -12,19 +12,17 @@ import random
 from enum import Enum
 
 class Questions(Enum):
-    [Hello, How, WhatCan, What, Why, Where] = range(6)
+    [Hello, How, WhatCan, What, Why, Where, MarcoPolo, ThankYou] = range(8)
 
 class Actions(Enum):
-    [Build, Get, Give, Stop, Come, Go, Teleport, Follow, Flatten, Craft,
-     Place, CheckInventory] = range(12)
+    [Build, Get, Give, Stop, Come, Go, Teleport, Follow, FaceMe, ObeyGravity,
+     Flatten, Craft, Place, CheckInventory] = range(14)
 
 actionToString = {Actions.Build: "build", Actions.Get: "gather",
                   Actions.Give: "give", Actions.Stop: "stop",
-                  Actions.Come: "come", Actions.Go: "go",
-                  Actions.Teleport: "teleport",
+                  Actions.Go: "go", Actions.Teleport: "teleport",
                   Actions.Follow: "follow", Actions.Flatten: "flatten",
-                  Actions.Craft: "craft", Actions.Place: "place",
-                  Actions.CheckInventory: "check my inventory for"}
+                  Actions.Craft: "craft", Actions.Place: "place"}
 
 class Objects(Enum):
     [House, Tunnel, Tree, Coal, Dirt, Sand, Water, Stone, Iron, Diamond,
@@ -63,6 +61,7 @@ class States:
     GIVE = "giving you something"
     GO_THERE = "going over there"
     COME_TO_PLAYER = "going to where you are"
+    OBEY_GRAVITY = "obeying gravity"
     CHECK_INVENTORY = "checking my inventory"
     MAKE_FLAT = "making this area flat"
     PLACE = "placing a block"
@@ -137,10 +136,8 @@ class Hello(tornado.websocket.WebSocketHandler):
             if message[0] == ";":
                 final_transcript = True
             # message = message[1:] # get rid of the first character flag for the message type
-            message = message.replace(";","!!! ")
+            message = message.replace(";","!!! ").lower()
             # robot.message_all(message)
-            if "down" in message:
-                robot.move(Dir.DOWN)
             if "up" in message:
                 robot.move(Dir.UP)
             if "left" in message:
@@ -154,9 +151,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                 
             # Detecting Question
             question = False
-            if message_has_substring(message, ["hello","hi","hey","howdy","high"]):
-                question = Questions.Hello
-            elif message_has_substring(message, ["how"]):
+            if message_has_substring(message, ["how"]):
                 question = Questions.How
             elif message_has_substring(message, ["what can"]):
                 question = Questions.WhatCan
@@ -166,12 +161,19 @@ class Hello(tornado.websocket.WebSocketHandler):
                 question = Questions.Why
             elif message_has_substring(message, ["where"]):
                 question = Questions.Where
+            elif message_has_substring(message, ["marco"]):
+                question = Questions.MarcoPolo
+            elif message_has_substring(message, ["thank"]):
+                question = Questions.ThankYou
+            elif (message_has_substring(message, ["hello","hi","hey","howdy","high"])
+                  and not message_has_substring(message, ["this"])):
+                question = Questions.Hello
             else:
                 question = False
             
             # Detecting Action
             action = False
-            if message_has_substring(message, ["stop","quit","no","don't","stay"]):
+            if message_has_substring(message, ["stop","quit","stay","don't","do not"]):
                 action = Actions.Stop
             elif message_has_substring(message, ["build","make"]):
                 action = Actions.Build
@@ -183,6 +185,10 @@ class Hello(tornado.websocket.WebSocketHandler):
                 action = Actions.Flatten
             elif message_has_substring(message, ["give","drop","throw"]):
                 action = Actions.Give
+            elif message_has_substring(message, ["face","look at me","look this way","look toward me"]):
+                action = Actions.FaceMe
+            elif message_has_substring(message, ["down","gravity"]):
+                action = Actions.ObeyGravity
             elif message_has_substring(message, ["craft"]):
                 action = Actions.Craft
             elif message_has_substring(message, ["teleport"]):
@@ -204,9 +210,9 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = Objects.House
             elif message_has_substring(message, ["tunnel","cave"]):
                 obj = Objects.Tunnel
-            elif message_has_substring(message, ["tree","wood","log","Wood"]):
+            elif message_has_substring(message, ["tree","wood","log"]):
                 obj = Objects.Tree
-            elif message_has_substring(message, ["coal","goal","cool","cold","Cole","Coke","call"]):
+            elif message_has_substring(message, ["coal","goal","cool","cold","cole","coke","call"]):
                 obj = Objects.Coal
             elif message_has_substring(message, ["dirt","ground","earth"]):
                 obj = Objects.Dirt
@@ -228,9 +234,9 @@ class Hello(tornado.websocket.WebSocketHandler):
                 obj = Objects.That
             elif message_has_substring(message, ["there","they're","their"]):
                 obj = Objects.There
-            elif message_has_substring(message, ["you doing","Jack doing"]):
+            elif message_has_substring(message, ["you doing","jack doing"]):
                 obj = Objects.Current_Action
-            elif message_has_substring(message, ["you","Jack","jack"]): #keep this last
+            elif message_has_substring(message, ["you","jack"]): #keep this last
                 obj = Objects.Jack
             else:
                 obj = False
@@ -243,7 +249,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                 if action is Actions.CheckInventory:
                     question = False
                 elif action is not False:
-                    action_phrase = actionToString[action]
+                    action_phrase = actionToString.get(action, "do that")
                     message_all(robot, "I can't explain how to " + action_phrase
                                 + ", but I might be able to do it for you.")
                     recognized_command = True
@@ -283,6 +289,13 @@ class Hello(tornado.websocket.WebSocketHandler):
                 elif final_transcript is True:
                     message_all(robot, "I don't know how to tell you where that is.")
                     recognized_command = True
+            elif question is Questions.MarcoPolo:
+                dist = round(robot.get_location().distance(robot.get_owner_location()), 2)
+                message_all(robot, "Polo! I am " + str(dist) + " units away from you.")
+                recognized_command = True
+            elif question is Questions.ThankYou:
+                message_all(robot, "You're welcome!")
+                recognized_command = True
                     
 
             # Making Jack do thing based on an action, obj combo
@@ -375,6 +388,15 @@ class Hello(tornado.websocket.WebSocketHandler):
                     robot_state = States.COME_TO_PLAYER
                     run_new_command(['comehere.py', MINECRAFT_USERNAME])
                     recognized_command = True
+                elif action is Actions.FaceMe:
+                    direction = robot.find_path(robot.get_owner_location())
+                    robot.turn(direction)
+                    recognized_command = True
+                elif action is Actions.ObeyGravity:
+                    should_follow = False
+                    robot_state = States.OBEY_GRAVITY
+                    run_new_command(['obeygravity.py', MINECRAFT_USERNAME])
+                    recognized_command = True
                 elif action is Actions.Follow:
                     should_follow = True
                     robot_state = States.FOLLOWING
@@ -454,8 +476,9 @@ def is_background_process_dead():
         if proc_returncode is not None:
             print("background process ended!")
             proc = False
-            if (robot_state is not States.GO_THERE and
-                robot_state is not States.CHECK_INVENTORY):
+            if (robot_state is not States.GO_THERE
+                and robot_state is not States.OBEY_GRAVITY
+                and robot_state is not States.CHECK_INVENTORY):
                 should_follow = True
             robot_state = States.IDLE
     if robot_state is States.IDLE and should_follow:
