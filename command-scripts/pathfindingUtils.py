@@ -19,6 +19,20 @@ def go_to_owner(robot, teleportThreshold):
         face_owner(robot)
     message_all(robot, "I'm here!")
 
+def go_there(robot, teleportThreshold):
+    thereLoc = robot.get_owner_target_block()
+    initialDist = int(robot.get_location().distance(thereLoc))
+    if initialDist < teleportThreshold:
+        message_all(robot, "I'm going over there.")
+        walk_toward_location(robot, thereLoc, 1)
+    else:
+        destLoc = find_air_near(robot, thereLoc)
+        if destLoc == None:
+            message_all(robot, "I can't find space to teleport there.")
+            return
+        message_all(robot, "I'm teleporting over there.")
+        robot.teleport(destLoc)
+
 def walk_toward_location(robot, destLoc, radius):
     while robot.get_location().distance(destLoc) > radius:
         direction = robot.find_path(destLoc)

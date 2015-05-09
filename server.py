@@ -374,7 +374,7 @@ class Hello(tornado.websocket.WebSocketHandler):
                         blockType = Utilities.get_that_block_type(robot)
                         if blockType is not None:
                             robot_state = States.GATHER
-                            run_new_command(['gatherblock.py', 
+                            run_new_command(['gatherthat.py', #todo
                                             MINECRAFT_USERNAME, 
                                             str([blockType])])
                             recognized_command = True
