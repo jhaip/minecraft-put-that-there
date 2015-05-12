@@ -160,10 +160,10 @@ class Hello(tornado.websocket.WebSocketHandler):
                 question = Questions.Hello
             elif message_has_substring(message, ["how"]):
                 question = Questions.How
-            elif message_has_substring(message, ["what can"]):
-                question = Questions.WhatCan
             elif message_has_substring(message, ["what can't","not able","can't you"]):
                 question = Questions.WhatCant
+            elif message_has_substring(message, ["what can you", "what can jack"]):
+                question = Questions.WhatCan
             elif message_has_substring(message, ["what should"]):
                 question = Questions.WhatShould
             elif message_has_substring(message, ["what","who"]):
