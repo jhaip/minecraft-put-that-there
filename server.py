@@ -333,7 +333,8 @@ class Hello(tornado.websocket.WebSocketHandler):
                     recognized_command = True
             elif question is Questions.MarcoPolo:
                 dist = round(robot.get_location().distance(robot.get_owner_location()), 2)
-                message_all(robot, "Polo! I am " + str(dist) + " units away from you.")
+                direction = str(robot.get_owner_location().direction(robot.get_location()))
+                message_all(robot, "Polo! I am " + str(dist) + " units away from you "+direction+".")
                 recognized_command = True
             elif question is Questions.ThankYou:
                 message_all(robot, "You're welcome!")
