@@ -4,41 +4,21 @@ is facing when it starts.
 """
 
 from botchallenge import *
+from gatherUtils import *
 import sys
-from pathfindingUtils import *
 
-def mine_if_solid(robot, direction):
-    """Mines the block only if it's a solid block (won't mine torches away)."""
-    is_solid = robot.is_block_solid(direction)
-    if is_solid:
-        robot.mine(direction)
+END_LAYER = int(sys.argv[2])
 
-def mine_tunnel(robot):
-    print("*** STARTING MINE_TUNNEL SCRIPT")
-    for i in range(10):
-        # Clear space above and below
-        mine_if_solid(robot, Dir.DOWN)
-        mine_if_solid(robot, Dir.UP)
-        
-        # Mine and move right
-        mine_if_solid(robot, Dir.RIGHT)
-        robot.move(Dir.RIGHT)
-
-        # Clear space above and below
-        mine_if_solid(robot, Dir.DOWN)
-        mine_if_solid(robot, Dir.UP)
-        
-        # Move left + down + forward
-        mine_if_solid(robot, Dir.LEFT)
-        robot.move(Dir.LEFT)
-        mine_if_solid(robot, Dir.DOWN)
-        robot.move(Dir.DOWN)
-        mine_if_solid(robot, Dir.FORWARD)
-        robot.move(Dir.FORWARD)
-    message_all(robot, "Tunnel complete!")
-    print("done!")
+TARGET_LIST_ARG = str(sys.argv[3])
+if TARGET_LIST_ARG == "[]": # to handle cases were we aren't looking for a target block
+    TARGET_LIST_ARG = []
+else:
+    TARGET_LIST_ARG = TARGET_LIST_ARG[1:-1]
+    TARGET_LIST_ARG = TARGET_LIST_ARG.split(',')
+    TARGET_LIST_ARG = [x[:-1].split('(') for x in TARGET_LIST_ARG]
+    TARGET_LIST_ARG = [BlockType(x[0], int(x[1])) for x in TARGET_LIST_ARG]
 
 robot = Robot(str(sys.argv[1]), "localhost")
-mine_tunnel(robot)
+mine_tunnel(robot, END_LAYER, TARGET_LIST_ARG)
 
 sys.exit() # make sure the program dies

@@ -3,6 +3,7 @@ from pathfindingUtils import *
 import sys
 
 def come_here(robot):
+    print("*** In come here script")
     teleportThreshold = 50
     go_to_owner(robot, teleportThreshold)
 

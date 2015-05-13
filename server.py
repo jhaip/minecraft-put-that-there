@@ -160,10 +160,10 @@ class Hello(tornado.websocket.WebSocketHandler):
                 question = Questions.Hello
             elif message_has_substring(message, ["how"]):
                 question = Questions.How
-            elif message_has_substring(message, ["what can"]):
-                question = Questions.WhatCan
             elif message_has_substring(message, ["what can't","not able","can't you"]):
                 question = Questions.WhatCant
+            elif message_has_substring(message, ["what can you", "what can jack"]):
+                question = Questions.WhatCan
             elif message_has_substring(message, ["what should"]):
                 question = Questions.WhatShould
             elif message_has_substring(message, ["what","who"]):
@@ -348,9 +348,10 @@ class Hello(tornado.websocket.WebSocketHandler):
                         robot_state = States.BUILD_HOUSE
                         run_new_command(['buildhut.py', MINECRAFT_USERNAME])
                         recognized_command = True
-                    elif obj is Objects.Tunnel:
+                    elif obj is Objects.Tunnel: #hack to recognize "dig a tunnel"
                         robot_state = States.BUILD_TUNNEL
-                        run_new_command(['minetunnel.py', MINECRAFT_USERNAME])
+                        # Mine a tunnel to layer 15 and not stopping for any particular block type
+                        run_new_command(['minetunnel.py', MINECRAFT_USERNAME, "15", "[]"])
                         recognized_command = True
                     elif final_transcript is True:
                         message_all(robot, "I don't know how to build that, but I can help "
@@ -363,7 +364,8 @@ class Hello(tornado.websocket.WebSocketHandler):
                 elif action is Actions.Get:
                     if obj is Objects.Tunnel: #hack to recognize "dig a tunnel"
                         robot_state = States.BUILD_TUNNEL
-                        run_new_command(['minetunnel.py', MINECRAFT_USERNAME])
+                        # Mine a tunnel to layer 15 and not stopping for any particular block type
+                        run_new_command(['minetunnel.py', MINECRAFT_USERNAME, "15", "[]"])
                         recognized_command = True
                     elif obj in objToBlockTypes:
                         robot_state = States.GATHER
